@@ -25,7 +25,7 @@ We prioritize **Light Mode First**. Our aesthetic is "Illuminated Precision"—c
 * **Primary:** Deep Indigo **\#2C3892**  
 * **Accent:** Electric Teal **\#23698C**  
 * **Background:** Stardust **\#EFEFED** (Primary Light)  
-* **Headlines:** **Montserrat** (Hero: **ExtraBold 800**, Cards: **SemiBold 600**)  
+* **Headlines:** **Montserrat** (Hero: **ExtraBold 800**, Sections: **ExtraBold 800**)  
 * **Data/Technical:** **JetBrains Mono**  
 * **Body:** **Inter**
 
@@ -60,7 +60,7 @@ We use a high-contrast pairing of "Massive Editorial" and "Technical Precision."
 * **Headlines (H1/Hero):** **Montserrat ExtraBold (800)**.  
   * *Usage:* Massive scale, tight tracking (\-0.02em).  
   * *Color:* Deep Indigo or Void.  
-* **Section Titles (H2/H3):** **Montserrat SemiBold (600)**.  
+* **Section Titles (H2/H3):** **Montserrat ExtraBold (800)**.  
   * *Usage:* Card titles, section headers.  
 * **Data & Labels:** **JetBrains Mono**.  
   * *Usage:* KPIs (\+40%), tags (FINTECH).  

@@ -71,7 +71,7 @@ The structure follows the **"Clarity of Use"** principle.
 
 * **Headlines:** **Montserrat**.  
   * *Hero H1:* Montserrat Black (800/900).  
-  * *Section H2/H3:* Montserrat Bold (700).  
+  * *Section H2/H3:* Montserrat ExtraBold (800).  
 * **Body:** **Inter**.  
   * *Paragraphs:* Inter Regular (400) or Medium (500) for readability.  
   * *UI Labels:* Inter SemiBold (600) \+ Uppercase tracking.

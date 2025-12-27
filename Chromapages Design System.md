@@ -33,7 +33,7 @@ Used to lift elements off the page.
 ### **2.3 Typography: "Swiss Tech"**
 
 * **H1 (Hero):** Montserrat **ExtraBold (800)**. Color: text-brand-primary (Deep Indigo).  
-* **H3 (Card Titles):** Montserrat **SemiBold (600)**. Color: text-brand-ink.  
+* **H2/H3 (Section Titles):** Montserrat **ExtraBold (800)**. Color: text-brand-ink.  
 * **Body:** Inter. Color: text-slate-600.  
 * **Micro-Labels:** JetBrains Mono. Color: text-brand-accent (Teal).
 
