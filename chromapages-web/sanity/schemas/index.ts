@@ -7,11 +7,17 @@ import { service } from "./service";
 import { caseStudy } from "./caseStudy";
 import { testimonial } from "./testimonial";
 import { seo, blockContent } from "./objects";
+import { cta, trustPill } from "./ui";
+import { bentoCard, bentoGrid } from "./bento";
 
 export const schemaTypes = [
     // Object types (must be defined first)
     seo,
     blockContent,
+    cta,
+    trustPill,
+    bentoCard,
+    bentoGrid,
 
     // Singleton documents
     siteSettings,

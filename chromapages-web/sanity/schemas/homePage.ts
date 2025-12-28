@@ -24,22 +24,31 @@ export const homePage = defineType({
             rows: 2,
         }),
         defineField({
+            name: "trustPill",
+            title: "Hero Trust Pill",
+            type: "trustPill",
+        }),
+        defineField({
             name: "heroCta",
             title: "Hero Primary CTA",
-            type: "object",
-            fields: [
-                { name: "label", type: "string", title: "Label" },
-                { name: "href", type: "string", title: "URL" },
-            ],
+            type: "cta",
         }),
         defineField({
             name: "heroSecondaryCta",
             title: "Hero Secondary CTA",
-            type: "object",
-            fields: [
-                { name: "label", type: "string", title: "Label" },
-                { name: "href", type: "string", title: "URL" },
-            ],
+            type: "cta",
+        }),
+        defineField({
+            name: "heroMockup",
+            title: "Hero Phone Mockup Image",
+            type: "image",
+            options: { hotspot: true },
+        }),
+        // Sections
+        defineField({
+            name: "featuresSection",
+            title: "Bento Features Section",
+            type: "bentoGrid",
         }),
         // Featured Content
         defineField({

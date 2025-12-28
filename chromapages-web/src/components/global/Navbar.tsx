@@ -4,8 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/Button";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ArrowRight } from "lucide-react";
 
 export function Navbar() {
     const [isOpen, setIsOpen] = useState(false);
@@ -37,79 +36,98 @@ export function Navbar() {
         <>
             <nav
                 className={cn(
-                    "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
+                    "fixed top-0 inset-x-0 z-50 transition-all duration-300 border-b",
                     scrolled
-                        ? "py-4 bg-white/80 backdrop-blur-md border-b border-white/20 shadow-sm"
-                        : "py-6 bg-transparent"
+                        ? "bg-brand-base/80 backdrop-blur-xl border-brand-accent/20 shadow-sm"
+                        : "bg-brand-base/60 backdrop-blur-sm border-transparent"
                 )}
             >
-                <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-                    {/* Logo */}
-                    <Link href="/" className="relative z-50">
-                        <span className={cn(
-                            "font-heading font-extrabold text-2xl tracking-tight transition-colors",
-                            scrolled ? "text-[var(--brand-ink)]" : "text-[var(--brand-primary)]"
-                        )}>
-                            Chromapages
-                        </span>
-                    </Link>
+                <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                    {/* Logo Section */}
+                    <div className="flex-shrink-0">
+                        <Link href="/" className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-xl bg-brand-primary flex items-center justify-center shadow-lg shadow-brand-primary/20">
+                                <span className="text-white font-heading font-bold text-sm">C</span>
+                            </div>
+                            <span className="font-heading font-bold text-xl tracking-tight text-brand-primary">
+                                Chromapages
+                            </span>
+                        </Link>
+                    </div>
 
-                    {/* Desktop Nav */}
+                    {/* Right Side: Navigation & CTA */}
                     <div className="hidden md:flex items-center gap-8">
-                        <div className="flex gap-6 card px-6 py-2 rounded-full glass-panel bg-white/50">
-                            {navLinks.map((link) => (
-                                <Link
-                                    key={link.href}
-                                    href={link.href}
-                                    className={cn(
-                                        "text-sm font-medium transition-colors hover:text-[var(--brand-primary)]",
-                                        pathname.startsWith(link.href)
-                                            ? "text-[var(--brand-primary)] font-bold"
-                                            : "text-[var(--brand-ink)]/70"
-                                    )}
-                                >
-                                    {link.label}
-                                </Link>
-                            ))}
+                        {/* Desktop Nav Links */}
+                        <div className="flex items-center gap-1 bg-white/50 backdrop-blur-md rounded-full px-1.5 py-1.5 border border-white/50 shadow-sm">
+                            {navLinks.map((link) => {
+                                const isActive = pathname.startsWith(link.href);
+                                return (
+                                    <Link
+                                        key={link.href}
+                                        href={link.href}
+                                        className={cn(
+                                            "px-5 py-2 rounded-full text-sm font-medium transition-all duration-300",
+                                            isActive
+                                                ? "bg-white text-brand-primary shadow-sm font-semibold"
+                                                : "text-brand-ink/70 hover:text-brand-primary hover:bg-white/50"
+                                        )}
+                                    >
+                                        {link.label}
+                                    </Link>
+                                );
+                            })}
                         </div>
-                        <Link href="/contact">
-                            <Button size="sm" className="hidden lg:inline-flex">
-                                Book A Call
-                            </Button>
+
+                        {/* CTA Button */}
+                        <Link
+                            href="/contact"
+                            className="bg-brand-primary hover:bg-brand-primary/90 text-white px-6 py-2.5 rounded-full text-sm font-bold tracking-wide transition-all shadow-lg shadow-brand-primary/20 hover:shadow-brand-primary/30 flex items-center gap-2 group transform active:scale-95 border border-brand-accent/20"
+                        >
+                            GET STARTED
+                            <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
                         </Link>
                     </div>
 
                     {/* Mobile Menu Toggle */}
-                    <button
-                        onClick={() => setIsOpen(!isOpen)}
-                        className="md:hidden relative z-50 p-2 text-[var(--brand-ink)]"
-                        aria-label="Toggle Menu"
-                    >
-                        {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                    </button>
+                    <div className="md:hidden">
+                        <button
+                            onClick={() => setIsOpen(!isOpen)}
+                            className="p-2 text-brand-primary hover:bg-brand-primary/5 rounded-full transition-colors"
+                            aria-label="Toggle Menu"
+                        >
+                            {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                        </button>
+                    </div>
                 </div>
             </nav>
 
             {/* Mobile Menu Overlay */}
             <div
                 className={cn(
-                    "fixed inset-0 z-40 bg-[var(--brand-base)]/95 backdrop-blur-xl transition-all duration-300 md:hidden flex flex-col justify-center items-center gap-8",
-                    isOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+                    "fixed inset-0 z-40 bg-brand-base/98 backdrop-blur-3xl transition-all duration-500 md:hidden flex flex-col pt-24",
+                    isOpen ? "opacity-100 pointer-events-auto translate-y-0" : "opacity-0 pointer-events-none -translate-y-4"
                 )}
             >
-                <div className="flex flex-col items-center gap-6">
-                    {navLinks.map((link) => (
+                <div className="flex flex-col items-center gap-6 px-6 w-full max-w-sm mx-auto">
+                    {navLinks.map((link, i) => (
                         <Link
                             key={link.href}
                             href={link.href}
-                            className="text-3xl font-heading font-bold text-[var(--brand-primary)]"
+                            onClick={() => setIsOpen(false)}
+                            className="text-2xl font-heading font-semibold text-brand-primary w-full text-center py-4 border-b border-brand-primary/10 transition-all hover:text-brand-accent active:scale-95"
+                            style={{ transitionDelay: `${i * 50}ms` }}
                         >
                             {link.label}
                         </Link>
                     ))}
-                    <Link href="/contact" className="mt-8">
-                        <Button size="lg">Book A Call</Button>
-                    </Link>
+                    <div className="flex flex-col gap-4 w-full mt-8">
+                        <Link href="/contact" className="w-full" onClick={() => setIsOpen(false)}>
+                            <button className="w-full bg-brand-primary text-white py-4 rounded-2xl font-bold tracking-wide shadow-xl flex items-center justify-center gap-2 border border-brand-accent/20">
+                                GET STARTED
+                                <ArrowRight className="w-4 h-4" />
+                            </button>
+                        </Link>
+                    </div>
                 </div>
             </div>
         </>
