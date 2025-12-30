@@ -1,77 +1,60 @@
-import { Zap, Target, Clock, Headphones } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { SectionHeading } from "@/components/ui/SectionHeading";
-import { MetricDisplay } from "@/components/ui/MetricDisplay";
-
-// Default pillars data
-const defaultPillars = [
-    {
-        icon: Zap,
-        title: "Looks Premium",
-        description: "Design that builds trust through cleanliness and light.",
-        metric: "100%",
-        metricLabel: "Brand Aligned",
-    },
-    {
-        icon: Target,
-        title: "Built to Convert",
-        description: "Clear paths to action with aggressive conversion engineering.",
-        metric: "+40%",
-        metricLabel: "Conversion Lift",
-    },
-    {
-        icon: Clock,
-        title: "Fast + Reliable",
-        description: "Sub-second load times with engineering-grade performance.",
-        metric: "0.8s",
-        metricLabel: "LCP Score",
-    },
-    {
-        icon: Headphones,
-        title: "Ongoing Support",
-        description: "We stay to iterate. Your success is our success.",
-        metric: "24/7",
-        metricLabel: "Support",
-    },
-];
+import { Smartphone, MousePointerClick, LifeBuoy, ShieldCheck, BarChart3, Search } from "lucide-react";
 
 export function FeaturesGrid() {
+    const features = [
+        {
+            icon: Smartphone,
+            title: "Fast on Mobile",
+            description: "Pages that load fast and feel smooth. Faster pages reduce drop‑offs and turn paid traffic into revenue."
+        },
+        {
+            icon: MousePointerClick,
+            title: "Built To Convert",
+            description: "Clear message hierarchy and friction-free forms designed to drive action: calls, bookings, and purchases."
+        },
+        {
+            icon: LifeBuoy,
+            title: "Ongoing Support",
+            description: "You’re not left hanging. We provide updates, fixes, performance improvements, and new pages post-launch."
+        },
+        {
+            icon: ShieldCheck,
+            title: "Launch-Safe QA",
+            description: "Cross-device testing and staging environments to ensure a stable launch with no unpleasant surprises."
+        },
+        {
+            icon: BarChart3,
+            title: "Measurement",
+            description: "GA4 baseline and event tracking set up correctly, so you know exactly what is working and can measure ROI."
+        },
+        {
+            icon: Search,
+            title: "Built To Be Found",
+            description: "Clean heading hierarchy, unique meta tags, and schema. A clean foundation for organic SEO growth."
+        }
+    ];
+
     return (
-        <section className="relative z-10 max-w-7xl mx-auto px-6 py-24">
-            <SectionHeading
-                label="The Chromapages System"
-                title="Four Pillars of Digital Excellence"
-                description="We don't just build websites; we build performance engines. Every project is grounded in strict adherence to these four core principles."
-            />
+        <section className="bg-white py-24 px-6 border-y border-slate-200">
+            <div className="max-w-7xl mx-auto">
+                <div className="text-center max-w-2xl mx-auto mb-20">
+                    <h2 className="text-3xl lg:text-4xl font-medium text-brand-ink tracking-tight mb-4 leading-[1.2] font-heading">
+                        Product Standards. <span className="text-slate-500/60">Included by default.</span>
+                    </h2>
+                    <p className="text-slate-600 font-body">Most agencies charge extra for quality. We consider it the baseline.</p>
+                </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {defaultPillars.map((pillar, index) => (
-                    <GlassCard
-                        key={index}
-                        className="flex flex-col h-full transition-all duration-500 hover:scale-105"
-                    >
-                        {/* Icon */}
-                        <div className="w-12 h-12 rounded-xl bg-[var(--brand-base)] flex items-center justify-center mb-6 shadow-sm border border-[var(--brand-primary)]/10 text-[var(--brand-primary)]">
-                            <pillar.icon className="w-6 h-6" />
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {features.map((feature, index) => (
+                        <div key={index} className="bg-surface-muted p-8 rounded-3xl hover:shadow-xl hover:shadow-brand-secondary/5 transition-all duration-300 group border border-transparent hover:border-slate-200">
+                            <div className="w-12 h-12 bg-white rounded-xl flex items-center justify-center text-brand-secondary mb-6 group-hover:bg-brand-secondary group-hover:text-white transition-colors border border-slate-200">
+                                <feature.icon className="w-6 h-6" />
+                            </div>
+                            <h3 className="text-lg font-semibold text-brand-ink mb-3 font-heading">{feature.title}</h3>
+                            <p className="text-slate-600 leading-relaxed text-sm font-body">{feature.description}</p>
                         </div>
-
-                        {/* Content */}
-                        <h3 className="heading-section text-xl mb-3 text-[var(--brand-ink)]">
-                            {pillar.title}
-                        </h3>
-                        <p className="text-gray-600 text-sm leading-relaxed mb-6 flex-grow">
-                            {pillar.description}
-                        </p>
-
-                        {/* Metric */}
-                        <div className="border-t border-[var(--brand-primary)]/10 pt-4 mt-auto">
-                            <MetricDisplay
-                                value={pillar.metric}
-                                label={pillar.metricLabel}
-                            />
-                        </div>
-                    </GlassCard>
-                ))}
+                    ))}
+                </div>
             </div>
         </section>
     );

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Montserrat, JetBrains_Mono } from "next/font/google";
+import { Inter, Poppins, JetBrains_Mono } from "next/font/google"; // 2
 import "./globals.css";
 
 // Font Configuration - Chromapages Typography System
@@ -9,8 +9,8 @@ const inter = Inter({
   display: "swap",
 });
 
-const montserrat = Montserrat({
-  variable: "--font-montserrat",
+const poppins = Poppins({
+  variable: "--font-poppins",
   subsets: ["latin"],
   display: "swap",
   weight: ["500", "600", "700", "800"],
@@ -70,7 +70,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${montserrat.variable} ${jetbrainsMono.variable}`}
+      className={`${inter.variable} ${poppins.variable} ${jetbrainsMono.variable}`}
       suppressHydrationWarning
     >
       <body className="min-h-screen overflow-x-hidden antialiased">

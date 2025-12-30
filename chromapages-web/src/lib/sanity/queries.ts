@@ -8,6 +8,7 @@ export const homePageQuery = groq`
     heroSubheadline,
     heroCta,
     heroSecondaryCta,
+    "heroMockup": heroMockup.asset->url,
     featuredServices[]-> {
       _id,
       title,
@@ -21,7 +22,8 @@ export const homePageQuery = groq`
       slug,
       client,
       industry,
-      mainImage,
+      projectType,
+      "mainImage": mainImage.asset->url,
       excerpt,
       results
     },
@@ -31,7 +33,7 @@ export const homePageQuery = groq`
       author,
       role,
       company,
-      avatar
+      "avatar": avatar.asset->url
     },
     seo
   }
@@ -110,6 +112,7 @@ export const caseStudiesQuery = groq`
     slug,
     client,
     industry,
+    projectType,
     mainImage,
     excerpt,
     results[]

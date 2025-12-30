@@ -10,18 +10,20 @@ const config: Config = {
         extend: {
             colors: {
                 brand: {
-                    primary: "#3B82F6", // Blue
-                    secondary: "#8B5CF6", // Violet
-                    accent: "#10B981", // Emerald
+                    primary: "#23698C", // Teal
+                    secondary: "#2C3892", // Dark Blue
+                    ink: "#0F172A", // Slate 900
+                    base: "#EFEFED", // Off-white
+                    accent: "#1B526F", // Darker Teal (Hover)
                 },
                 surface: {
-                    base: "#F8FAFC",
+                    base: "#EFEFED",
                     card: "#FFFFFF",
-                    muted: "#F1F5F9",
+                    muted: "#F8FAFC",
                 },
             },
             fontFamily: {
-                heading: ["var(--font-montserrat)", "sans-serif"],
+                heading: ["var(--font-poppins)", "sans-serif"],
                 body: ["var(--font-inter)", "sans-serif"],
                 mono: ["var(--font-jetbrains-mono)", "monospace"],
             },
@@ -32,17 +34,20 @@ const config: Config = {
                 glass: "0 8px 32px 0 rgba(31, 38, 135, 0.07)",
                 card: "0 4px 24px -4px rgba(15, 23, 42, 0.08)",
                 "card-hover": "0 8px 32px -4px rgba(15, 23, 42, 0.12)",
-                elevated: "0 12px 40px -8px rgba(59, 130, 246, 0.15)",
-                floating: "0 24px 64px -12px rgba(139, 92, 246, 0.2)",
+                elevated: "0 12px 40px -8px rgba(35, 105, 140, 0.15)",
             },
             animation: {
                 float: "float 6s ease-in-out infinite",
-                "pulse-slow": "pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                marquee: "scroll 40s linear infinite",
             },
             keyframes: {
                 float: {
                     "0%, 100%": { transform: "translateY(0)" },
                     "50%": { transform: "translateY(-12px)" },
+                },
+                scroll: {
+                    "0%": { transform: "translateX(0)" },
+                    "100%": { transform: "translateX(-50%)" },
                 },
             },
         },

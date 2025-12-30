@@ -41,6 +41,20 @@ export const caseStudy = defineType({
             },
         }),
         defineField({
+            name: "projectType",
+            title: "Project Type",
+            type: "string",
+            options: {
+                list: [
+                    "Marketing Website",
+                    "E-Commerce",
+                    "SaaS / Web App",
+                    "Internal Tool",
+                ],
+            },
+            validation: (Rule) => Rule.required(),
+        }),
+        defineField({
             name: "mainImage",
             title: "Main Image",
             type: "image",
