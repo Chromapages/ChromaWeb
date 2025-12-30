@@ -37,10 +37,8 @@ export function Navbar() {
         <>
             <nav
                 className={cn(
-                    "sticky top-0 z-50 py-4 border-b transition-all duration-300",
-                    scrolled
-                        ? "bg-surface-base/95 backdrop-blur-md border-[#D7D9E0] shadow-sm"
-                        : "bg-surface-base/95 backdrop-blur-sm border-[#D7D9E0]"
+                    "sticky top-0 z-50 py-4 border-b transition-all duration-300 bg-[#EFEFED] border-[#D7D9E0]",
+                    scrolled && "shadow-sm"
                 )}
             >
                 <div className="max-w-[1400px] mx-auto px-6 lg:px-12 flex justify-between items-center">
@@ -73,7 +71,7 @@ export function Navbar() {
                         <Link href="/work" className="px-5 py-2 rounded-full border border-[#D7D9E0] text-sm font-medium hover:border-brand-secondary hover:text-brand-secondary transition-all bg-white text-slate-700">
                             View Work
                         </Link>
-                        <Link href="/contact" className="px-5 py-2 rounded-full bg-brand-secondary text-white text-sm font-medium hover:bg-brand-primary transition-all shadow-lg shadow-brand-secondary/20">
+                        <Link href="/contact" className="px-5 py-2 rounded-full bg-brand-primary text-white text-sm font-medium hover:bg-brand-accent transition-all shadow-lg shadow-brand-primary/20">
                             Book A Call
                         </Link>
                     </div>
