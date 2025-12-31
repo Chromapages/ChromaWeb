@@ -74,6 +74,7 @@ export function Footer() {
                     <div className="flex gap-6">
                         <Link href="/privacy" className="hover:text-gray-300">Privacy Policy</Link>
                         <Link href="/terms" className="hover:text-gray-300">Terms of Service</Link>
+                        <a href="https://chromapages.sanity.studio/" target="_blank" rel="noopener noreferrer" className="hover:text-gray-300">CMS</a>
                     </div>
                 </div>
             </div>

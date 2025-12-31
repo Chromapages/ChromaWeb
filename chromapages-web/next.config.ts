@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   // Standalone output for Hostinger VPS deployment
   output: "standalone",
 
+  // Transpile Sanity packages for Turbopack compatibility
+  transpilePackages: ['next-sanity'],
+
   // Image optimization
   images: {
     remotePatterns: [
