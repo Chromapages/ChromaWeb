@@ -1,13 +1,11 @@
-export * from "./FeaturesGrid"; // Still keeping based on usage
-export * from "./ProcessSteps";
-export * from "./TestimonialsSlider";
-export * from "./CTABanner";
-export * from "./PricingTable";
-export * from "./CaseStudyCard";
-
-// New components
-export * from "./FeaturedWork";
-export * from "./NewHero";
-export * from "./LogoCloud";
-export * from "./ServicesOffer";
-export * from "./CaseStudyHighlight";
+export { NewHero } from './NewHero';
+export { LogoCloud } from './LogoCloud';
+export { FeaturesGrid } from './FeaturesGrid';
+export { ServicesOffer } from './ServicesOffer';
+export { CaseStudyHighlight } from './CaseStudyHighlight';
+export { FeaturedWork } from './FeaturedWork';
+export { ProcessSteps } from './ProcessSteps';
+export { TestimonialsSlider } from './TestimonialsSlider';
+export { PricingTable } from './PricingTable';
+export { CTABanner } from './CTABanner';
+export { CaseStudyCard } from './CaseStudyCard';

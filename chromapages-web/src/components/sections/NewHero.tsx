@@ -5,7 +5,20 @@ import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { motion } from "framer-motion";
 
-export function NewHero() {
+interface NewHeroProps {
+    headline?: string;
+    subheadline?: string;
+    cta?: {
+        label: string;
+        href: string;
+    };
+    secondaryCta?: {
+        label: string;
+        href: string;
+    };
+}
+
+export function NewHero({ headline, subheadline, cta, secondaryCta }: NewHeroProps) {
     return (
         <header className="relative px-4 lg:px-8 2xl:px-12 max-w-[1800px] mx-auto mt-4 pb-32">
             <div className="relative h-[650px] lg:h-[750px] 2xl:h-[850px] rounded-[2.5rem] overflow-hidden group bg-surface-base">
@@ -19,7 +32,7 @@ export function NewHero() {
                     />
                     <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-brand-primary/5 rounded-full blur-3xl animate-pulse" />
                     <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-brand-accent/5 rounded-full blur-3xl" />
-                    <div className="absolute inset-0 bg-[url('/noise.png')] opacity-[0.02] mix-blend-overlay" />
+                    {/* Noise texture removed */}
                 </div>
 
                 {/* Content */}
@@ -40,8 +53,14 @@ export function NewHero() {
                         transition={{ duration: 0.6, delay: 0.1, ease: "easeOut" }}
                         className="text-5xl lg:text-7xl font-bold text-brand-ink tracking-tight leading-[1.1] mb-8 font-heading"
                     >
-                        Fast Websites That <br />
-                        <span className="text-brand-primary">Turn Visitors Into Customers</span>
+                        {headline ? (
+                            <span dangerouslySetInnerHTML={{ __html: headline.replace(/\n/g, "<br/>") }} />
+                        ) : (
+                            <>
+                                Fast Websites That <br />
+                                <span className="text-brand-primary">Turn Visitors Into Customers</span>
+                            </>
+                        )}
                     </motion.h1>
 
                     <motion.p
@@ -50,7 +69,7 @@ export function NewHero() {
                         transition={{ duration: 0.6, delay: 0.2, ease: "easeOut" }}
                         className="text-slate-600 text-lg lg:text-xl font-light max-w-2xl mb-12 leading-relaxed font-body"
                     >
-                        We design and build modern sites and web apps that load fast, look premium, and drive more leads.
+                        {subheadline || "We design and build modern sites and web apps that load fast, look premium, and drive more leads."}
                     </motion.p>
 
                     <motion.div
@@ -59,12 +78,12 @@ export function NewHero() {
                         transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
                         className="flex items-center gap-6"
                     >
-                        <Link href="/contact" className="px-8 py-4 rounded-full bg-brand-primary text-white text-base font-bold uppercase tracking-wide hover:bg-brand-secondary hover:-translate-y-0.5 hover:shadow-xl transition-all duration-300 flex items-center gap-2 shadow-lg shadow-brand-primary/20">
-                            Book A Call
+                        <Link href={cta?.href || "/contact"} className="px-8 py-4 rounded-full bg-brand-primary text-white text-base font-bold uppercase tracking-wide hover:bg-brand-secondary hover:-translate-y-0.5 hover:shadow-xl transition-all duration-300 flex items-center gap-2 shadow-lg shadow-brand-primary/20">
+                            {cta?.label || "Book A Call"}
                             <ArrowRight className="w-4 h-4" />
                         </Link>
-                        <Link href="/work" className="flex items-center gap-2 text-slate-600 text-base font-medium hover:text-brand-primary transition-colors group/link">
-                            View our work
+                        <Link href={secondaryCta?.href || "/work"} className="flex items-center gap-2 text-slate-600 text-base font-medium hover:text-brand-primary transition-colors group/link">
+                            {secondaryCta?.label || "View our work"}
                             <ArrowUpRight className="w-4 h-4 group-hover/link:translate-x-0.5 group-hover/link:-translate-y-0.5 transition-transform" />
                         </Link>
                     </motion.div>

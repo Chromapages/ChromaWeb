@@ -25,7 +25,13 @@ export const homePageQuery = groq`
       projectType,
       "mainImage": mainImage.asset->url,
       excerpt,
-      results
+      results,
+      testimonial-> {
+        quote,
+        author,
+        role,
+        company
+      }
     },
     testimonials[]-> {
       _id,

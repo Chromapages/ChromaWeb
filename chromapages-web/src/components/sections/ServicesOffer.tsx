@@ -2,7 +2,47 @@ import Link from "next/link";
 import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 
-export function ServicesOffer() {
+interface Service {
+    _id: string;
+    title: string;
+    shortDescription: string;
+    slug: { current: string };
+}
+
+interface ServicesOfferProps {
+    services?: Service[];
+}
+
+export function ServicesOffer({ services }: ServicesOfferProps) {
+    const defaultServices = [
+        {
+            _id: "1",
+            title: "Marketing Sites &\nLanding Pages",
+            shortDescription: "Lead Generation",
+            slug: { current: "marketing-sites" }
+        },
+        {
+            _id: "2",
+            title: "E-Commerce\nBuilds",
+            shortDescription: "Shopify & Custom",
+            slug: { current: "ecommerce" }
+        },
+        {
+            _id: "3",
+            title: "Web Apps &\nMVPs",
+            shortDescription: "Portals & Tools",
+            slug: { current: "web-apps" }
+        },
+        {
+            _id: "4",
+            title: "Retainers &\nSupport",
+            shortDescription: "Ongoing Growth",
+            slug: { current: "retainers" }
+        }
+    ];
+
+    const displayServices = services?.length ? services : defaultServices;
+
     return (
         <section className="py-24 px-6 max-w-[1440px] mx-auto">
             <div className="grid lg:grid-cols-2 gap-16 items-center">
@@ -17,33 +57,21 @@ export function ServicesOffer() {
                     </Link>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                        {/* Service Card 1 */}
-                        <div className="p-6 rounded-2xl border border-slate-200 bg-white hover:border-brand-secondary transition-colors group cursor-pointer">
-                            <span className="text-xs font-semibold text-slate-500/60 mb-3 block font-mono">01</span>
-                            <h4 className="text-lg font-semibold text-brand-ink mb-6 group-hover:text-brand-secondary transition-colors font-heading">Marketing Sites &<br />Landing Pages</h4>
-                            <span className="text-xs font-semibold text-brand-primary border-b border-brand-primary/30 pb-0.5 font-heading">Lead Generation</span>
-                        </div>
-
-                        {/* Service Card 2 */}
-                        <div className="p-6 rounded-2xl border border-slate-200 bg-white hover:border-brand-secondary transition-colors group cursor-pointer">
-                            <span className="text-xs font-semibold text-slate-500/60 mb-3 block font-mono">02</span>
-                            <h4 className="text-lg font-semibold text-brand-ink mb-6 group-hover:text-brand-secondary transition-colors font-heading">E-Commerce<br />Builds</h4>
-                            <span className="text-xs font-semibold text-brand-primary border-b border-brand-primary/30 pb-0.5 font-heading">Shopify & Custom</span>
-                        </div>
-
-                        {/* Service Card 3 */}
-                        <div className="p-6 rounded-2xl border border-slate-200 bg-white hover:border-brand-secondary transition-colors group cursor-pointer">
-                            <span className="text-xs font-semibold text-slate-500/60 mb-3 block font-mono">03</span>
-                            <h4 className="text-lg font-semibold text-brand-ink mb-6 group-hover:text-brand-secondary transition-colors font-heading">Web Apps &<br />MVPs</h4>
-                            <span className="text-xs font-semibold text-brand-primary border-b border-brand-primary/30 pb-0.5 font-heading">Portals & Tools</span>
-                        </div>
-
-                        {/* Service Card 4 */}
-                        <div className="p-6 rounded-2xl border border-slate-200 bg-white hover:border-brand-secondary transition-colors group cursor-pointer">
-                            <span className="text-xs font-semibold text-slate-500/60 mb-3 block font-mono">04</span>
-                            <h4 className="text-lg font-semibold text-brand-ink mb-6 group-hover:text-brand-secondary transition-colors font-heading">Retainers &<br />Support</h4>
-                            <span className="text-xs font-semibold text-brand-primary border-b border-brand-primary/30 pb-0.5 font-heading">Ongoing Growth</span>
-                        </div>
+                        {displayServices.map((service, index) => (
+                            <Link href={`/services/${service.slug.current}`} key={service._id}>
+                                <div className="p-6 rounded-2xl border border-slate-200 bg-white hover:border-brand-secondary transition-colors group cursor-pointer h-full">
+                                    <span className="text-xs font-semibold text-slate-500/60 mb-3 block font-mono">
+                                        {String(index + 1).padStart(2, '0')}
+                                    </span>
+                                    <h4 className="text-lg font-semibold text-brand-ink mb-6 group-hover:text-brand-secondary transition-colors font-heading whitespace-pre-line">
+                                        {service.title}
+                                    </h4>
+                                    <span className="text-xs font-semibold text-brand-primary border-b border-brand-primary/30 pb-0.5 font-heading">
+                                        {service.shortDescription}
+                                    </span>
+                                </div>
+                            </Link>
+                        ))}
                     </div>
                 </div>
 

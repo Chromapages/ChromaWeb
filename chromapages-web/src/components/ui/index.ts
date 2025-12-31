@@ -1,4 +1,5 @@
-export * from "./Button";
-export * from "./GlassCard";
-export * from "./Input";
-export * from "./SectionHeading";
+export { Button } from './Button';
+export { Input } from './Input';
+export { GlassCard } from './GlassCard';
+export { SectionHeading } from './SectionHeading';
+export { BentoCard } from './BentoCard';
