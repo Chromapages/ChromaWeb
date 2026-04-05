@@ -1,0 +1,108 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f9f9f7;
+  --surface: #f9f9f7;
+  --surface-lowest: #ffffff;
+  --surface-container-low: #f4f4f2;
+  --surface-container: #eeeeec;
+  --surface-highest: #e2e3e1;
+  --on-surface: #1a1c1b;
+  --primary: #111e7c;
+  --primary-container: #2c3892;
+  --outline-variant: #c6c5d4;
+  --shadow-ambient: 0px 24px 48px rgba(15, 23, 42, 0.06);
+  --radius-functional: 0.25rem;
+  --radius-structural: 0.5rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-lowest: var(--surface-lowest);
+  --color-surface-container-low: var(--surface-container-low);
+  --color-surface-container: var(--surface-container);
+  --color-surface-highest: var(--surface-highest);
+  --color-on-surface: var(--on-surface);
+  --color-primary: var(--primary);
+  --color-primary-container: var(--primary-container);
+  --color-outline-variant: var(--outline-variant);
+  --font-display: var(--font-manrope);
+  --font-body: var(--font-inter);
+  --shadow-ambient: var(--shadow-ambient);
+  --radius-functional: var(--radius-functional);
+  --radius-structural: var(--radius-structural);
+  --text-display-lg: 3.5rem;
+  --text-display-lg--line-height: 0.96;
+  --text-display-lg--letter-spacing: -0.02em;
+  --text-headline-md: 1.75rem;
+  --text-headline-md--line-height: 1.15;
+  --text-body-lg: 1rem;
+  --text-body-lg--line-height: 1.65;
+  --text-label-md: 0.75rem;
+  --text-label-md--line-height: 1;
+  --text-label-md--letter-spacing: 0.05em;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-height: 100%;
+  background:
+    radial-gradient(circle at top left, rgba(17, 30, 124, 0.09), transparent 32%),
+    radial-gradient(circle at top right, rgba(44, 56, 146, 0.07), transparent 30%),
+    linear-gradient(180deg, #ffffff 0%, #f9f9f7 40%, #f4f4f2 100%);
+  color: var(--on-surface);
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+::selection {
+  background: rgba(17, 30, 124, 0.18);
+  color: var(--on-surface);
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+
+.glass-surface {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .glass-surface {
+    background: rgba(255, 255, 255, 0.94);
+  }
+}
+
+.gradient-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-container));
+}
+
+.shadow-ambient {
+  box-shadow: var(--shadow-ambient);
+}
+
+.rounded-functional {
+  border-radius: var(--radius-functional);
+}
+
+.rounded-structural {
+  border-radius: var(--radius-structural);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
