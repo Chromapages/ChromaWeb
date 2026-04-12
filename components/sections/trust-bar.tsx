@@ -1,81 +1,59 @@
-import Image from "next/image";
-import { cn } from "@/lib/utils";
-import { urlFor } from "@/lib/sanity/image";
-import type { SanityImageSource } from "@sanity/image-url";
+"use client";
 
-type Partner = {
-  name: string;
-  logo: SanityImageSource;
-  website?: string;
-};
 
-type TrustBarProps = {
-  partners: Partner[];
-  className?: string;
-};
 
-export default function TrustBar({ partners, className }: TrustBarProps) {
-  if (!partners || partners.length === 0) {
-    return (
-      <section className={cn("bg-surface-container-low py-10", className)}>
-        <div className="mx-auto max-w-7xl px-6 md:px-8">
-          <div className="flex flex-col items-center justify-between gap-8 md:flex-row">
-            <p className="text-label-sm font-bold uppercase tracking-[0.2em] text-on-surface/40">
-              Trusted by leading brands
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-12 opacity-30 grayscale filter transition-all duration-700">
-               {/* Placeholder logos if no data */}
-               <div className="h-6 w-24 bg-on-surface/20 rounded-full" />
-               <div className="h-6 w-20 bg-on-surface/20 rounded-full" />
-               <div className="h-6 w-28 bg-on-surface/20 rounded-full" />
-               <div className="h-6 w-24 bg-on-surface/20 rounded-full" />
-            </div>
-          </div>
-        </div>
-      </section>
-    );
-  }
+const partners = [
+  { name: "Partner 1", id: "p1" },
+  { name: "Partner 2", id: "p2" },
+  { name: "Partner 3", id: "p3" },
+  { name: "Partner 4", id: "p4" },
+  { name: "Partner 5", id: "p5" },
+  { name: "Partner 6", id: "p6" },
+];
 
+export default function TrustBar() {
   return (
-    <section className={cn("bg-surface-container-low py-12", className)}>
+    <section className="bg-bg py-16 border-y border-primary/5">
       <div className="mx-auto max-w-7xl px-6 md:px-8">
-        <div className="flex flex-col items-center justify-between gap-10 lg:flex-row">
-          <p className="flex-shrink-0 text-label-xs font-bold uppercase tracking-[0.25em] text-on-surface/40 lg:text-left">
-            Trusted by
+        <div className="flex flex-col items-center gap-10 lg:flex-row lg:justify-between">
+          <p className="flex-shrink-0 font-display text-xs font-bold uppercase tracking-[0.2em] text-primary/40">
+            Trusted by industry leaders
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-x-12 gap-y-8 lg:justify-end">
-            {partners.map((partner, index) => {
-              const logoUrl = partner.logo ? urlFor(partner.logo).url() : "";
-              if (!logoUrl) return null;
-
-              return (
-                <div
-                  key={`${partner.name}-${index}`}
-                  className="group relative transition-all duration-500"
+          
+          <div className="relative w-full overflow-hidden lg:max-w-2xl">
+            {/* Simple CSS marquee for mobile, static flex for lg */}
+            <div className="flex animate-marquee items-center gap-12 lg:animate-none lg:justify-end">
+              {[...partners, ...partners].map((partner, i) => (
+                <div 
+                  key={`${partner.id}-${i}`}
+                  className="flex h-8 w-24 flex-shrink-0 items-center justify-center rounded bg-primary/5 grayscale opacity-50 transition-all hover:grayscale-0 hover:opacity-100"
                 >
-                  <div className="relative h-8 w-28 grayscale opacity-40 transition-all duration-500 group-hover:grayscale-0 group-hover:opacity-100">
-                    <Image
-                      src={logoUrl}
-                      alt={partner.name}
-                      fill
-                      className="object-contain"
-                    />
-                  </div>
-                  {partner.website && (
-                    <a
-                      href={partner.website}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="absolute inset-0 z-10"
-                      aria-label={`Visit ${partner.name} website`}
-                    />
-                  )}
+                  <span className="text-[10px] font-bold text-primary italic uppercase tracking-tighter">Logo {partner.name.split(' ')[1]}</span>
                 </div>
-              );
-            })}
+              ))}
+            </div>
+            
+            {/* Fade edges */}
+            <div className="absolute inset-y-0 left-0 w-12 bg-gradient-to-r from-bg to-transparent lg:hidden" />
+            <div className="absolute inset-y-0 right-0 w-12 bg-gradient-to-l from-bg to-transparent lg:hidden" />
           </div>
         </div>
       </div>
+      
+      <style jsx global>{`
+        @keyframes marquee {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(-50%); }
+        }
+        .animate-marquee {
+          animation: marquee 25s linear infinite;
+        }
+        @media (min-width: 1024px) {
+          .animate-marquee {
+            animation: none;
+          }
+        }
+      `}</style>
     </section>
   );
 }

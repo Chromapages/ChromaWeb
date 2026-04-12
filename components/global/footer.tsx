@@ -1,42 +1,84 @@
 import Link from "next/link";
-import { footerGroups, site } from "@/lib/site";
 
 export default function Footer() {
   return (
-    <footer className="bg-surface-container-low">
-      <div className="mx-auto max-w-7xl px-6 py-16 md:px-8">
-        <div className="grid gap-12 lg:grid-cols-[1.2fr_1fr]">
-          <div className="max-w-md space-y-4">
-            <Link href="/" className="font-display text-2xl text-on-surface">
-              {site.name}
+    <footer className="border-t border-primary/10 bg-bg transition-colors duration-280">
+      <div className="mx-auto max-w-7xl px-6 py-20 md:px-8">
+        <div className="grid gap-16 lg:grid-cols-3">
+          {/* Brand Column */}
+          <div className="space-y-6">
+            <Link href="/" className="flex items-center gap-2">
+              <span className="font-display text-2xl font-bold tracking-tight text-primary">
+                Chromapages
+              </span>
             </Link>
-            <p className="text-body-lg text-on-surface/72">{site.description}</p>
-            <p className="text-sm text-on-surface/60">{site.tagline}</p>
+            <p className="max-w-xs text-base font-medium text-primary/65">
+              High-performance digital systems for high-value brands.
+            </p>
           </div>
 
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {footerGroups.map((group) => (
-              <div key={group.title}>
-                <p className="text-label-md uppercase text-primary-container">
-                  {group.title}
-                </p>
-                <ul className="mt-4 space-y-3 text-sm text-on-surface/72">
-                  {group.links.map((link) => (
-                    <li key={link.href}>
-                      <Link href={link.href} className="transition hover:text-on-surface">
-                        {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+          {/* Navigation Column */}
+          <div className="grid grid-cols-2 gap-8 lg:gap-12">
+            <div className="space-y-4">
+              <p className="font-display text-sm font-bold uppercase tracking-widest text-primary/40">
+                Navigation
+              </p>
+              <ul className="space-y-3">
+                {["Work", "Services", "Process", "Contact"].map((label) => (
+                  <li key={label}>
+                    <Link
+                      href={`/${label.toLowerCase()}`}
+                      className="text-sm font-semibold text-primary/70 transition hover:text-accent"
+                    >
+                      {label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="space-y-4">
+              <p className="font-display text-sm font-bold uppercase tracking-widest text-primary/40">
+                Contact
+              </p>
+              <ul className="space-y-3">
+                <li>
+                  <a
+                    href="mailto:hello@chromapages.com"
+                    className="text-sm font-semibold text-primary/70 transition hover:text-accent"
+                  >
+                    hello@chromapages.com
+                  </a>
+                </li>
+                <li>
+                  <span className="text-sm font-semibold text-primary/70">
+                    San Francisco, CA
+                  </span>
+                </li>
+              </ul>
+            </div>
           </div>
-        </div>
 
-        <div className="mt-14 flex flex-col gap-3 bg-surface-container-low/70 pt-8 text-sm text-on-surface/60 md:flex-row md:items-center md:justify-between">
-          <p>Copyright {new Date().getFullYear()} {site.name}. All rights reserved.</p>
-          <p>Built to feel clear, calm, and ready to convert.</p>
+          {/* Social & Legal Column */}
+          <div className="space-y-6 lg:text-right">
+            <div className="flex gap-4 lg:justify-end">
+              {[
+                { label: "LinkedIn", href: "#" },
+                { label: "Twitter", href: "#" },
+              ].map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  aria-label={social.label}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-functional bg-surface-2 text-primary transition hover:bg-surface-3 hover:text-accent"
+                >
+                  <span className="text-xs font-bold">{social.label[0]}</span>
+                </a>
+              ))}
+            </div>
+            <p className="text-sm font-medium text-primary/40">
+              © {new Date().getFullYear()} Chromapages. All rights reserved.
+            </p>
+          </div>
         </div>
       </div>
     </footer>

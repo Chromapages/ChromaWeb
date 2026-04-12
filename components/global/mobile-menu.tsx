@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+import Button from "@/components/ui/button";
 import type { NavItem } from "@/lib/site";
 
 type MobileMenuProps = {
@@ -82,40 +83,41 @@ export default function MobileMenu({
         ref={panelRef}
         id="mobile-menu"
         className={cn(
-          "absolute right-0 top-0 h-full w-[min(90vw,24rem)] bg-surface-lowest p-6 shadow-[0px_24px_48px_rgba(15,23,42,0.12)] transition-transform duration-300",
+          "absolute right-0 top-0 h-full w-[min(90vw,24rem)] bg-bg p-8 shadow-2xl transition-transform duration-300",
           open ? "translate-x-0" : "translate-x-full",
         )}
       >
-        <div className="flex items-center justify-end">
+        <div className="flex items-center justify-between">
+          <span className="font-display text-lg font-bold text-primary">Menu</span>
           <button
             type="button"
             onClick={() => onOpenChange(false)}
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-functional bg-surface-container text-on-surface"
+            className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center rounded-functional bg-surface-2 text-primary"
             aria-label="Close menu"
           >
             <svg
               viewBox="0 0 24 24"
-              className="h-5 w-5"
+              className="h-6 w-6"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
             >
               <path
                 d="M6 6L18 18M18 6L6 18"
                 stroke="currentColor"
-                strokeWidth="1.75"
+                strokeWidth="2"
                 strokeLinecap="round"
               />
             </svg>
           </button>
         </div>
-        <nav aria-label="Mobile navigation" className="mt-8">
-          <ul className="space-y-3">
-            {links.map((link) => (
+        <nav aria-label="Mobile navigation" className="mt-12">
+          <ul className="space-y-4">
+            {links.slice(0, 4).map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
                   onClick={() => onOpenChange(false)}
-                  className="block rounded-structural bg-surface-container-low px-4 py-4 text-lg font-medium text-on-surface transition hover:bg-surface-container"
+                  className="block rounded-functional border border-primary/5 bg-surface-2 px-6 py-5 text-lg font-semibold text-primary transition active:bg-surface-3"
                 >
                   {link.label}
                 </Link>
@@ -123,14 +125,14 @@ export default function MobileMenu({
             ))}
           </ul>
         </nav>
-        <div className="mt-8">
-          <Link
+        <div className="mt-12">
+          <Button
             href={ctaHref}
             onClick={() => onOpenChange(false)}
-            className="flex min-h-11 items-center justify-center rounded-functional gradient-primary px-5 py-3 text-sm font-medium text-white"
+            className="w-full py-4 text-base"
           >
             {ctaLabel}
-          </Link>
+          </Button>
         </div>
       </div>
     </div>

@@ -1,5 +1,7 @@
 import type { NextConfig } from "next";
 
+const isDev = process.env.NODE_ENV === "development";
+
 const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
@@ -20,7 +22,7 @@ const nextConfig: NextConfig = {
       "img-src 'self' data: blob: https://cdn.sanity.io https://www.googletagmanager.com https://www.google-analytics.com",
       "font-src 'self' data:",
       "style-src 'self' 'unsafe-inline'",
-      "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com",
+      `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://www.googletagmanager.com https://www.google-analytics.com`,
       "connect-src 'self' https://cdn.sanity.io https://www.googletagmanager.com https://www.google-analytics.com",
       "frame-src 'self' https://www.googletagmanager.com",
       "upgrade-insecure-requests",

@@ -1,108 +1,95 @@
 @import "tailwindcss";
 
-:root {
-  --background: #f9f9f7;
-  --surface: #f9f9f7;
-  --surface-lowest: #ffffff;
-  --surface-container-low: #f4f4f2;
-  --surface-container: #eeeeec;
-  --surface-highest: #e2e3e1;
-  --on-surface: #1a1c1b;
-  --primary: #111e7c;
-  --primary-container: #2c3892;
-  --outline-variant: #c6c5d4;
-  --shadow-ambient: 0px 24px 48px rgba(15, 23, 42, 0.06);
-  --radius-functional: 0.25rem;
-  --radius-structural: 0.5rem;
+@theme {
+  /* Chromapages Redesign Tokens */
+  --color-bg: #EFEFED;
+  --color-primary: #2C3892; /* Deep Indigo */
+  --color-accent: #23698C;  /* Teal Blue */
+  
+  /* Semantic Surface Layering */
+  --color-surface-2: #E5E6F0;
+  --color-surface-3: #DBDBEE;
+  
+  /* Typography Scale */
+  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui;
+  --font-body: "Inter", ui-sans-serif, system-ui;
+  
+  --text-hero: clamp(2.5rem, 1rem + 4vw, 5rem);
+  --text-section: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
+  --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
+  
+  --radius-structural: 1.5rem;
+  --radius-functional: 0.75rem;
+
+  /* Shadows - Computed manually to avoid build issues */
+  --shadow-soft: 0 4px 24px -2px rgba(44, 56, 146, 0.08);
+  --shadow-glow: 0 0 0 1px rgba(35, 105, 140, 0.3), 0 8px 32px rgba(35, 105, 140, 0.12);
+  --shadow-glow-hover: 0 0 0 1.5px rgba(35, 105, 140, 0.4), 0 12px 48px rgba(35, 105, 140, 0.2);
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-surface: var(--surface);
-  --color-surface-lowest: var(--surface-lowest);
-  --color-surface-container-low: var(--surface-container-low);
-  --color-surface-container: var(--surface-container);
-  --color-surface-highest: var(--surface-highest);
-  --color-on-surface: var(--on-surface);
-  --color-primary: var(--primary);
-  --color-primary-container: var(--primary-container);
-  --color-outline-variant: var(--outline-variant);
-  --font-display: var(--font-manrope);
-  --font-body: var(--font-inter);
-  --shadow-ambient: var(--shadow-ambient);
-  --radius-functional: var(--radius-functional);
-  --radius-structural: var(--radius-structural);
-  --text-display-lg: 3.5rem;
-  --text-display-lg--line-height: 0.96;
-  --text-display-lg--letter-spacing: -0.02em;
-  --text-headline-md: 1.75rem;
-  --text-headline-md--line-height: 1.15;
-  --text-body-lg: 1rem;
-  --text-body-lg--line-height: 1.65;
-  --text-label-md: 0.75rem;
-  --text-label-md--line-height: 1;
-  --text-label-md--letter-spacing: 0.05em;
-}
+@layer base {
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+  }
 
-html {
-  scroll-behavior: smooth;
-}
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-primary);
+    font-family: var(--font-body);
+    line-height: 1.6;
+  }
 
-body {
-  min-height: 100%;
-  background:
-    radial-gradient(circle at top left, rgba(17, 30, 124, 0.09), transparent 32%),
-    radial-gradient(circle at top right, rgba(44, 56, 146, 0.07), transparent 30%),
-    linear-gradient(180deg, #ffffff 0%, #f9f9f7 40%, #f4f4f2 100%);
-  color: var(--on-surface);
-  font-family: var(--font-inter), system-ui, sans-serif;
-}
-
-::selection {
-  background: rgba(17, 30, 124, 0.18);
-  color: var(--on-surface);
-}
-
-:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 3px;
-}
-
-.glass-surface {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-}
-
-@supports not (backdrop-filter: blur(1px)) {
-  .glass-surface {
-    background: rgba(255, 255, 255, 0.94);
+  h1, h2, h3, h4, .font-display {
+    font-family: var(--font-display);
   }
 }
 
-.gradient-primary {
-  background: linear-gradient(135deg, var(--primary), var(--primary-container));
+@utility glass-panel {
+  border: 1px solid rgba(35, 105, 140, 0.18);
+  background: rgba(239, 239, 237, 0.15);
+  backdrop-filter: blur(20px);
+  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.shadow-ambient {
-  box-shadow: var(--shadow-ambient);
+@utility glass-panel-accent {
+  @apply glass-panel;
+  box-shadow: var(--shadow-glow);
+  &:hover {
+    box-shadow: var(--shadow-glow-hover);
+    transform: translateY(-4px);
+  }
 }
 
-.rounded-functional {
-  border-radius: var(--radius-functional);
+@utility nav-underline {
+  position: relative;
+  &::after {
+    content: "";
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    height: 2px;
+    width: 0;
+    background-color: var(--color-accent);
+    transition: all 0.3s ease;
+  }
+  &:hover::after {
+    width: 100%;
+  }
 }
 
-.rounded-structural {
-  border-radius: var(--radius-structural);
+@utility grid-dot-pattern {
+  background-image: radial-gradient(rgba(44, 56, 146, 0.05) 1px, transparent 1px);
+  background-size: 24px 24px;
+  opacity: 0.5;
 }
 
+/* Reduced Motion */
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
-    scroll-behavior: auto !important;
     transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

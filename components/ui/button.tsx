@@ -27,21 +27,24 @@ type NativeButtonProps = SharedProps &
 
 function buttonClasses(variant: NonNullable<SharedProps["variant"]>) {
   const base =
-    "inline-flex min-h-11 items-center justify-center gap-2 rounded-functional px-5 py-3 text-sm font-medium transition duration-300";
+    "inline-flex min-h-[44px] items-center justify-center gap-2 rounded-functional px-6 py-3 text-sm font-semibold transition-all duration-280 ease-out active:scale-[0.98]";
 
   switch (variant) {
     case "secondary":
-      return cn(base, "bg-surface-container text-on-surface hover:bg-surface-highest");
+      return cn(
+        base,
+        "border border-primary/10 bg-surface-2 text-primary hover:bg-surface-3 hover:border-primary/20",
+      );
     case "tertiary":
       return cn(
         base,
-        "bg-transparent px-0 text-primary-container hover:text-primary hover:underline underline-offset-4",
+        "bg-transparent px-0 text-accent hover:opacity-80 nav-underline",
       );
     case "primary":
     default:
       return cn(
         base,
-        "gradient-primary text-white shadow-ambient hover:translate-y-[-1px] hover:shadow-[0px_28px_56px_rgba(15,23,42,0.12)]",
+        "bg-accent text-white shadow-soft hover:brightness-110 hover:-translate-y-0.5",
       );
   }
 }

@@ -1,286 +1,180 @@
 "use client";
 
 import { useRef } from "react";
-import Image from "next/image";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import Button from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-type HeroAction = {
-  label: string;
-  href: string;
-  variant?: "primary" | "secondary" | "tertiary";
-};
-
 type HeroProps = {
   eyebrow?: string;
-  title: string;
-  description: string;
-  primaryAction: HeroAction;
-  secondaryAction?: HeroAction;
+  title?: string;
+  description?: string;
+  primaryAction?: { label: string; href: string };
+  secondaryAction?: { label: string; href: string; variant?: any };
   highlights?: string[];
   panelLabel?: string;
   panelTitle?: string;
   panelItems?: string[];
   isHome?: boolean;
-  className?: string;
 };
 
 export default function Hero({
-  eyebrow,
-  title,
-  description,
-  primaryAction,
-  secondaryAction,
-  highlights = [],
-  panelLabel,
-  panelTitle,
-  panelItems,
+  eyebrow = "Digital Design Elevated",
+  title = "High-performance digital systems for high-value brands.",
+  description = "Chromapages builds conversion-engineered experiences that transform your digital presence into a silent, 24/7 client-acquisition engine.",
+  primaryAction = { label: "Book a discovery call", href: "/contact" },
+  secondaryAction = { label: "View our work", href: "/work" },
   isHome = false,
-  className,
 }: HeroProps) {
-  const container = useRef<HTMLDivElement>(null);
-  const mockupRef = useRef<HTMLDivElement>(null);
-  const card1Ref = useRef<HTMLDivElement>(null);
-  const card2Ref = useRef<HTMLDivElement>(null);
-  const card3Ref = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const cardStackRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
     () => {
-      const tl = gsap.timeline({ defaults: { ease: "power3.out", duration: 1 } });
+      const tl = gsap.timeline({ defaults: { ease: "power4.out", duration: 1.2 } });
 
-      // Entrance Animations
-      tl.from(".hero-content > *", {
-        y: 30,
-        opacity: 0,
+      // Reset initial states for entrance
+      gsap.set(".hero-fade-up", { y: 40, opacity: 0 });
+      gsap.set(".hero-card", { scale: 0.9, opacity: 0, x: 20 });
+
+      tl.to(".hero-fade-up", {
+        y: 0,
+        opacity: 1,
         stagger: 0.1,
-      })
-        .from(
-          mockupRef.current,
-          {
-            x: -50,
-            opacity: 0,
-            duration: 1.2,
-          },
-          "-=0.5",
-        )
-        .from(
-          [card1Ref.current, card2Ref.current, card3Ref.current],
-          {
-            scale: 0.8,
-            opacity: 0,
-            stagger: 0.2,
-            duration: 0.8,
-          },
-          "-=0.8",
-        );
+      }, 0.2);
 
-      // Continuous Floating Floating
-      gsap.to(card1Ref.current, {
-        y: -15,
-        duration: 2.5,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-      });
-      gsap.to(card2Ref.current, {
-        y: 10,
-        duration: 3,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-        delay: 0.5,
-      });
-      gsap.to(card3Ref.current, {
-        y: -12,
-        duration: 2.8,
-        repeat: -1,
-        yoyo: true,
-        ease: "sine.inOut",
-        delay: 0.2,
-      });
+      if (isHome) {
+        tl.to(".hero-card", {
+          scale: 1,
+          opacity: 1,
+          x: 0,
+          stagger: 0.15,
+        }, 0.5);
+
+        // Floating animation for the stack
+        gsap.to(cardStackRef.current, {
+          y: -12,
+          duration: 3,
+          repeat: -1,
+          yoyo: true,
+          ease: "sine.inOut",
+        });
+      }
     },
-    { scope: container },
+    { scope: containerRef, dependencies: [isHome] }
   );
 
   return (
     <section
-      ref={container}
+      ref={containerRef}
       className={cn(
-        "relative flex min-h-[90vh] items-center overflow-hidden pt-20 pb-16 lg:pt-32 lg:pb-24",
-        className,
+        "relative flex items-center overflow-hidden bg-bg pt-20",
+        isHome ? "min-h-[100svh]" : "py-24 lg:py-32"
       )}
     >
-      {/* Background Subtle Elements */}
-      <div className="absolute inset-0 z-0 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-primary/5 blur-[120px]" />
-        <div className="absolute bottom-[10%] right-[-5%] h-[400px] w-[400px] rounded-full bg-primary/10 blur-[100px]" />
+      {/* Background Layering */}
+      <div className="grid-dot-pattern absolute inset-0 pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-7xl pointer-events-none">
+         <div className="absolute top-[10%] left-[10%] w-[40vw] h-[40vw] rounded-full bg-accent/5 blur-[120px]" />
+         <div className="absolute bottom-[20%] right-[10%] w-[30vw] h-[30vw] rounded-full bg-primary/5 blur-[100px]" />
       </div>
 
       <div className="relative z-10 mx-auto max-w-7xl px-6 md:px-8">
-        <div className="grid gap-12 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-20">
-          {/* Visual Area (Left) */}
-          <div className="relative order-2 lg:order-1">
-            {isHome && !panelItems ? (
-              <>
-                {/* Product Showcase */}
-                <div ref={mockupRef} className="relative z-10 mx-auto max-w-[320px] lg:max-w-none">
-                  <Image
-                    src="/images/hero/mockup.png"
-                    alt="Chromapages Product Interface"
-                    width={600}
-                    height={800}
-                    className="h-auto w-full drop-shadow-[0_32px_64px_rgba(0,0,0,0.15)]"
-                    priority
-                  />
-                </div>
-
-                {/* Floating Cards */}
-                <div
-                  ref={card1Ref}
-                  className="absolute -left-4 top-[20%] z-20 w-32 md:-left-12 md:w-48 lg:w-56"
-                >
-                  <Image
-                    src="/images/hero/card-graph.png"
-                    alt="Growth Metrics"
-                    width={240}
-                    height={240}
-                    className="h-auto w-full rounded-2xl shadow-ambient backdrop-blur-md"
-                  />
-                </div>
-                <div
-                  ref={card2Ref}
-                  className="absolute -right-4 top-[10%] z-20 w-28 md:-right-8 md:w-40 lg:w-48"
-                >
-                  <Image
-                    src="/images/hero/card-speed.png"
-                    alt="Performance Score"
-                    width={200}
-                    height={200}
-                    className="h-auto w-full rounded-2xl shadow-ambient backdrop-blur-md"
-                  />
-                </div>
-                <div
-                  ref={card3Ref}
-                  className="absolute bottom-[10%] right-0 z-20 w-36 md:right-[-20px] md:w-52 lg:w-60"
-                >
-                  <Image
-                    src="/images/hero/card-conversion.png"
-                    alt="Conversion Optimization"
-                    width={260}
-                    height={260}
-                    className="h-auto w-full rounded-2xl shadow-ambient backdrop-blur-md"
-                  />
-                </div>
-              </>
-            ) : panelItems ? (
-              /* Information Panel (Standard Pages) */
-              <div className="relative z-10 h-full w-full">
-                <div className="rounded-structural border border-outline-variant/30 bg-surface-container-low p-8 shadow-ambient backdrop-blur-xl lg:p-12">
-                  <div className="space-y-8">
-                    <div className="space-y-2">
-                      {panelLabel && (
-                        <span className="text-label-sm font-bold uppercase tracking-widest text-primary/60">
-                          {panelLabel}
-                        </span>
-                      )}
-                      {panelTitle && (
-                        <h3 className="font-display text-headline-sm text-on-surface">
-                          {panelTitle}
-                        </h3>
-                      )}
-                    </div>
-                    <ul className="space-y-4">
-                      {panelItems.map((item, i) => (
-                        <li key={i} className="flex items-start gap-3">
-                          <div className="mt-1.5 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-primary" />
-                          <span className="text-body-md text-on-surface/70 leading-relaxed">
-                            {item}
-                          </span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-                
-                {/* Visual Accent for Panel */}
-                <div className="absolute -bottom-6 -right-6 -z-10 h-32 w-32 rounded-full bg-primary/10 blur-2xl" />
-              </div>
-            ) : null}
-          </div>
-
-          {/* Content (Right) */}
-          <div className="hero-content space-y-8 order-1 lg:order-2">
-            {eyebrow && (
-              <span className="inline-block rounded-full bg-primary/10 px-4 py-1.5 text-label-md font-bold uppercase tracking-widest text-primary">
-                {eyebrow}
-              </span>
-            )}
-            <div className="space-y-6">
-              <h1 className="font-display text-display-lg leading-[0.96] tracking-[-0.03em] text-on-surface">
-                {title}
-              </h1>
-              <p className="max-w-xl text-body-lg text-on-surface/70 lg:text-xl">
-                {description}
-              </p>
+        <div className={cn(
+          "grid gap-16 lg:items-center lg:gap-24",
+          isHome ? "lg:grid-cols-[1.1fr_0.9fr]" : "lg:grid-cols-1 text-center"
+        )}>
+          
+          {/* Content Column */}
+          <div className={cn(
+            "flex flex-col",
+            isHome ? "items-start text-left" : "items-center text-center mx-auto max-w-4xl"
+          )}>
+            <div className="hero-fade-up mb-8 inline-flex items-center gap-2 rounded-full border border-primary/10 bg-surface-2 px-4 py-1.5 text-xs font-bold uppercase tracking-widest text-primary">
+              <span className="flex h-1.5 w-1.5 rounded-full bg-accent animate-pulse" />
+              {eyebrow}
             </div>
 
-            <div className="flex flex-col gap-4 sm:flex-row">
+            <h1 className={cn(
+              "hero-fade-up mb-8 font-display font-extrabold leading-[1.05] tracking-tight text-primary",
+              isHome ? "text-hero" : "text-section lg:text-5xl"
+            )}>
+              {title}
+            </h1>
+
+            <p className={cn(
+              "hero-fade-up mb-12 text-lg font-medium leading-relaxed text-primary/65 lg:text-xl",
+              isHome ? "max-w-xl" : "max-w-2xl"
+            )}>
+              {description}
+            </p>
+
+            <div className="hero-fade-up flex flex-wrap gap-4 justify-center">
               <Button
                 href={primaryAction.href}
-                variant={primaryAction.variant ?? "primary"}
-                analyticsLabel={primaryAction.label}
-                analyticsLocation="hero"
                 className="h-14 px-10 text-base"
+                analyticsLabel="Hero primary CTA"
+                analyticsLocation="hero"
               >
                 {primaryAction.label}
               </Button>
-              {secondaryAction && (
-                <Button
-                  href={secondaryAction.href}
-                  variant={secondaryAction.variant ?? "secondary"}
-                  analyticsLabel={secondaryAction.label}
-                  analyticsLocation="hero"
-                  className="h-14 px-10 text-base border border-outline-variant/30 glass-surface"
-                >
-                  {secondaryAction.label}
-                </Button>
-              )}
+              <Button
+                href={secondaryAction.href}
+                variant="secondary"
+                className="h-14 px-10 text-base"
+                analyticsLabel="Hero secondary CTA"
+                analyticsLocation="hero"
+              >
+                {secondaryAction.label}
+              </Button>
             </div>
-
-            {/* Social Proof */}
-            <div className="flex flex-col gap-6 pt-10 border-t border-surface-highest/50">
-              <div className="flex items-center gap-4">
-                <div className="relative h-10 w-32">
-                  <Image
-                    src="/images/hero/avatars.png"
-                    alt="Our Happy Clients"
-                    fill
-                    className="object-contain object-left"
-                  />
+            
+            {isHome && (
+              <div className="hero-fade-up mt-16 flex items-center gap-6 border-t border-primary/5 pt-8">
+                <div className="flex -space-x-3">
+                   {[1,2,3,4].map(i => (
+                     <div key={i} className="h-10 w-10 overflow-hidden rounded-full border-2 border-bg bg-surface-3" />
+                   ))}
                 </div>
-                <p className="text-body-md font-medium text-on-surface/60">
-                  <span className="text-on-surface font-bold text-primary">150+</span> high-growth
-                  brands launched
+                <p className="text-sm font-semibold text-primary/50">
+                  Join <span className="text-primary font-bold">150+</span> founders growing with Chromapages
                 </p>
               </div>
-              
-              {highlights.length > 0 && (
-                <div className="flex flex-wrap gap-x-8 gap-y-3">
-                  {highlights.map((highlight) => (
-                    <div key={highlight} className="flex items-center gap-2 text-label-md text-on-surface/50">
-                      <div className="h-1 w-1 rounded-full bg-primary" />
-                      {highlight}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
           </div>
+
+          {/* Visual Column / Card Stack */}
+          {isHome && (
+            <div className="relative flex items-center justify-center lg:justify-end">
+              <div 
+                ref={cardStackRef}
+                className="relative h-[280px] w-full max-w-[400px] lg:h-[400px] lg:max-w-none"
+              >
+                {/* Stacked Glass Cards */}
+                <div className="hero-card glass-panel-accent absolute top-0 right-0 w-[85%] rotate-[3deg] p-8 lg:p-10">
+                  <p className="mb-2 font-display text-xs font-bold uppercase tracking-widest text-accent">Efficiency</p>
+                  <p className="font-display text-3xl font-extrabold text-primary lg:text-4xl">≤21 Days</p>
+                  <p className="mt-2 text-sm font-medium text-primary/60">Average turnaround</p>
+                </div>
+
+                <div className="hero-card glass-panel-accent absolute top-[40px] right-[20px] w-[85%] rotate-[-2deg] p-8 lg:p-10">
+                  <p className="mb-2 font-display text-xs font-bold uppercase tracking-widest text-accent">Growth</p>
+                  <p className="font-display text-3xl font-extrabold text-primary lg:text-4xl">+40%</p>
+                  <p className="mt-2 text-sm font-medium text-primary/60">Conversion lift</p>
+                </div>
+
+                <div className="hero-card glass-panel-accent absolute top-[80px] right-[40px] w-[85%] rotate-[1deg] p-8 lg:top-[100px] lg:right-[60px] lg:p-10">
+                  <p className="mb-2 font-display text-xs font-bold uppercase tracking-widest text-accent">Trust</p>
+                  <p className="font-display text-3xl font-extrabold text-primary lg:text-4xl">150+</p>
+                  <p className="mt-2 text-sm font-medium text-primary/60">Brands launched</p>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       </div>
     </section>
   );
 }
-

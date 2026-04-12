@@ -17,18 +17,33 @@ export default function Header({ items = staticNavigation }: HeaderProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-40">
-      <div className="glass-surface shadow-ambient">
+    <header className="sticky top-0 z-50">
+      <div className="glass-panel border-b border-primary/5 shadow-soft">
         <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-6 md:px-8">
-          <Link href="/" className="flex items-center gap-3 font-display text-lg text-on-surface">
-            <span className="inline-flex h-9 w-9 items-center justify-center rounded-functional gradient-primary text-sm font-semibold text-white">
-              C
+          <Link href="/" className="flex items-center gap-3 transition-opacity hover:opacity-90">
+            <svg
+              width="32"
+              height="32"
+              viewBox="0 0 32 32"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="text-accent"
+            >
+              <rect x="4" y="4" width="24" height="24" rx="6" fill="currentColor" fillOpacity="0.1" />
+              <path
+                d="M16 8V24M8 16H24M12 12L20 20M20 12L12 20"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+              />
+            </svg>
+            <span className="font-display text-xl font-bold tracking-tight text-primary">
+              Chromapages
             </span>
-            <span>{site.name}</span>
           </Link>
 
-          <nav aria-label="Primary" className="hidden items-center gap-7 md:flex">
-            {items.map((item) => {
+          <nav aria-label="Primary" className="hidden items-center gap-8 lg:flex">
+            {items.slice(0, 4).map((item) => {
               const active =
                 pathname === item.href || pathname.startsWith(`${item.href}/`);
 
@@ -38,8 +53,8 @@ export default function Header({ items = staticNavigation }: HeaderProps) {
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "text-sm font-medium transition hover:text-primary",
-                    active ? "text-primary" : "text-on-surface/72",
+                    "nav-underline text-sm font-semibold transition-colors",
+                    active ? "text-accent" : "text-primary/65 hover:text-primary",
                   )}
                 >
                   {item.label}
@@ -48,11 +63,12 @@ export default function Header({ items = staticNavigation }: HeaderProps) {
             })}
           </nav>
 
-          <div className="hidden md:block">
+          <div className="hidden items-center gap-4 lg:flex">
             <Button
               href={site.bookingHref}
               analyticsLabel={site.bookingLabel}
               analyticsLocation="header"
+              className="px-6"
             >
               {site.bookingLabel}
             </Button>
