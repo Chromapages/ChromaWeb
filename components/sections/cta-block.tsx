@@ -13,9 +13,9 @@ type CtaBlockProps = {
 };
 
 export default function CtaBlock({
-  title = "Ready to engineering a system that actually converts?",
-  description = "Schedule a discovery call to audit your current performance bottlenecks and map a path to high-performance customer acquisition.",
-  primaryLabel = "Book your discovery call",
+  title = "Ready when you are.",
+  description = "Tell us what you need. We will help you sort out the next step, whether that is a full website, a focused page, or ongoing support.",
+  primaryLabel = "Book A Call",
   primaryHref = "/contact",
 }: CtaBlockProps) {
   return (

@@ -7,9 +7,9 @@ import ProcessSteps from "@/components/sections/process-steps";
 import CtaBlock from "@/components/sections/cta-block";
 
 export const metadata: Metadata = {
-  title: "High-Performance Digital Systems | Chromapages",
+  title: "Digital Design Elevated.",
   description:
-    "We build conversion-engineered websites and web apps that turn high-value traffic into booked discovery calls. No fluff, just performance.",
+    "We design and build modern websites and web apps that load fast, look premium, and drive more leads.",
 };
 
 export default function HomePage() {

@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import Button from "@/components/ui/button";
+import { featuredProjects } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 type HeroProps = {
@@ -21,9 +22,9 @@ type HeroProps = {
 
 export default function Hero({
   eyebrow = "Digital Design Elevated",
-  title = "High-performance digital systems for high-value brands.",
-  description = "Chromapages builds conversion-engineered experiences that transform your digital presence into a silent, 24/7 client-acquisition engine.",
-  primaryAction = { label: "Book a discovery call", href: "/contact" },
+  title = "Digital Design Elevated.",
+  description = "We design and build modern websites and web apps that load fast, look premium, and drive more leads.",
+  primaryAction = { label: "Book A Call", href: "/contact" },
   secondaryAction = { label: "View our work", href: "/work" },
   isHome = false,
 }: HeroProps) {
@@ -131,14 +132,12 @@ export default function Hero({
             </div>
             
             {isHome && (
-              <div className="hero-fade-up mt-16 flex items-center gap-6 border-t border-primary/5 pt-8">
-                <div className="flex -space-x-3">
-                   {[1,2,3,4].map(i => (
-                     <div key={i} className="h-10 w-10 overflow-hidden rounded-full border-2 border-bg bg-surface-3" />
-                   ))}
-                </div>
-                <p className="text-sm font-semibold text-primary/50">
-                  Join <span className="text-primary font-bold">150+</span> founders growing with Chromapages
+              <div className="hero-fade-up mt-16 border-t border-primary/5 pt-8">
+                <p className="text-xs font-bold uppercase tracking-widest text-primary/40">
+                  Our work
+                </p>
+                <p className="mt-3 text-sm font-semibold text-primary/60">
+                  Real projects. Real structure. Built to make the next step obvious.
                 </p>
               </div>
             )}
@@ -147,28 +146,37 @@ export default function Hero({
           {/* Visual Column / Card Stack */}
           {isHome && (
             <div className="relative flex items-center justify-center lg:justify-end">
-              <div 
+              <div
                 ref={cardStackRef}
-                className="relative h-[280px] w-full max-w-[400px] lg:h-[400px] lg:max-w-none"
+                className="relative h-[280px] w-full max-w-[400px] lg:h-[420px] lg:max-w-none"
               >
-                {/* Stacked Glass Cards */}
-                <div className="hero-card glass-panel-accent absolute top-0 right-0 w-[85%] rotate-[3deg] p-8 lg:p-10">
-                  <p className="mb-2 font-display text-xs font-bold uppercase tracking-widest text-accent">Efficiency</p>
-                  <p className="font-display text-3xl font-extrabold text-primary lg:text-4xl">≤21 Days</p>
-                  <p className="mt-2 text-sm font-medium text-primary/60">Average turnaround</p>
-                </div>
-
-                <div className="hero-card glass-panel-accent absolute top-[40px] right-[20px] w-[85%] rotate-[-2deg] p-8 lg:p-10">
-                  <p className="mb-2 font-display text-xs font-bold uppercase tracking-widest text-accent">Growth</p>
-                  <p className="font-display text-3xl font-extrabold text-primary lg:text-4xl">+40%</p>
-                  <p className="mt-2 text-sm font-medium text-primary/60">Conversion lift</p>
-                </div>
-
-                <div className="hero-card glass-panel-accent absolute top-[80px] right-[40px] w-[85%] rotate-[1deg] p-8 lg:top-[100px] lg:right-[60px] lg:p-10">
-                  <p className="mb-2 font-display text-xs font-bold uppercase tracking-widest text-accent">Trust</p>
-                  <p className="font-display text-3xl font-extrabold text-primary lg:text-4xl">150+</p>
-                  <p className="mt-2 text-sm font-medium text-primary/60">Brands launched</p>
-                </div>
+                {/* Stacked Glass Cards — real featured projects */}
+                {featuredProjects.slice(0, 3).map((project, i) => {
+                  const positions = [
+                    "top-0 right-0 rotate-[3deg]",
+                    "top-[40px] right-[20px] rotate-[-2deg] lg:top-[60px] lg:right-[30px]",
+                    "top-[80px] right-[40px] rotate-[1deg] lg:top-[120px] lg:right-[60px]",
+                  ];
+                  return (
+                    <div
+                      key={project.slug}
+                      className={cn(
+                        "hero-card glass-panel-accent absolute w-[85%] p-6 lg:p-8",
+                        positions[i]
+                      )}
+                    >
+                      <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-accent lg:text-xs">
+                        {project.category}
+                      </p>
+                      <p className="font-display text-lg font-extrabold text-primary lg:text-2xl">
+                        {project.label}
+                      </p>
+                      <p className="mt-2 text-xs font-medium leading-relaxed text-primary/60 lg:text-sm">
+                        {project.result}
+                      </p>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           )}

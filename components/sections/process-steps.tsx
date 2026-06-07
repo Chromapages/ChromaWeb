@@ -2,18 +2,23 @@
 
 import { useState } from "react";
 import ScrollReveal from "@/components/ui/scroll-reveal";
+import { type ProcessStep } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
-const steps = [
-  { title: "Discover", summary: "We align on goals, audience, and the high-value conversion targets." },
-  { title: "Architect", summary: "We map the conversion engineering and information hierarchy." },
-  { title: "Build", summary: "We implement using Next.js 15+ and Tailwind v4 for raw performance." },
-  { title: "Launch", summary: "We verify tracking, performance metrics, and push the system live." },
+const steps: ProcessStep[] = [
+  { title: "Discover", summary: "We align on goals, audience, and what the site needs to do." },
+  { title: "Design", summary: "We shape the page structure and key messages." },
+  { title: "Build", summary: "We implement with mobile performance and accessibility in mind." },
+  { title: "Launch", summary: "We deploy, verify, and support after launch." },
 ];
 
-export default function ProcessSteps({ steps: initialSteps }: { steps?: any[] }) {
+export default function ProcessSteps({
+  steps: initialSteps,
+}: {
+  steps?: ProcessStep[];
+}) {
   const [activeStep, setActiveStep] = useState(0);
-  const displaySteps = initialSteps || steps;
+  const displaySteps = initialSteps ?? steps;
 
   return (
     <section id="process" className="bg-surface-2 py-24 lg:py-32">

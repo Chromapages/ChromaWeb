@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Hero from "@/components/sections/hero";
-import ContactForm from "@/components/forms/contact-form";
+import RequestForm from "@/components/forms/request-form";
 import SectionHeading from "@/components/ui/section-heading";
 import Button from "@/components/ui/button";
 import { site } from "@/lib/site";
@@ -37,7 +37,7 @@ export default function ContactPage() {
               description="We only ask for the details that help qualify the project and keep the first conversation useful."
             />
             <div className="mt-8">
-              <ContactForm />
+              <RequestForm />
             </div>
           </div>
           <aside className="space-y-5">

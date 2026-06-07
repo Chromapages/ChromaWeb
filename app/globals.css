@@ -5,13 +5,14 @@
   --color-bg: #EFEFED;
   --color-primary: #2C3892; /* Deep Indigo */
   --color-accent: #23698C;  /* Teal Blue */
-  
+  --color-ink: #0F172A;     /* Ink */
+
   /* Semantic Surface Layering */
   --color-surface-2: #E5E6F0;
   --color-surface-3: #DBDBEE;
-  
+
   /* Typography Scale */
-  --font-display: "Plus Jakarta Sans", ui-sans-serif, system-ui;
+  --font-display: "Montserrat", ui-sans-serif, system-ui;
   --font-body: "Inter", ui-sans-serif, system-ui;
   
   --text-hero: clamp(2.5rem, 1rem + 4vw, 5rem);

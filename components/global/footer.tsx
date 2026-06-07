@@ -13,7 +13,8 @@ export default function Footer() {
               </span>
             </Link>
             <p className="max-w-xs text-base font-medium text-primary/65">
-              High-performance digital systems for high-value brands.
+              We design and build modern websites and web apps that load fast,
+              look premium, and drive more leads.
             </p>
           </div>
 
