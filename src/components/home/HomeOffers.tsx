@@ -143,13 +143,13 @@ export function HomeOffers({section, offers}: HomeOffersProps) {
       aria-roledescription="carousel"
       aria-label="Defined Engagements"
     >
-      <div className="mx-auto w-full max-w-main px-6 lg:px-10">
+      <div className="mx-auto w-full max-w-content-wide px-6 lg:px-10">
         {/* Section Header with Navigation Controls */}
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <div className="flex items-center gap-3">
               <span className="font-display text-xs font-semibold tracking-[0.2em] text-teal uppercase">
-                03 / Defined Engagements
+                05 / Defined Engagements
               </span>
               <span className="h-px w-8 bg-teal/40" />
             </div>

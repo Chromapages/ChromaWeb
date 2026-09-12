@@ -9,14 +9,107 @@ import {parseProcessContext} from "./processContext";
 import {ProjectFitForm} from "@/components/contact/ProjectFitForm";
 import type {SeoData} from "@/lib/seo";
 
+export type ProcessWorkingTogetherRole = {
+  label?: string | null;
+  detail?: string | null;
+  icon?: {
+    url?: string | null;
+    alt?: string | null;
+  } | null;
+};
+
+export type ProcessResponsibilityRow = {
+  title?: string | null;
+  detail?: string | null;
+  studio?: boolean | null;
+  team?: boolean | null;
+  together?: boolean | null;
+};
+
+export type ProcessWorkingTogetherData = {
+  eyebrow?: string | null;
+  headline?: string | null;
+  introduction?: string | null;
+  ctaLabel?: string | null;
+  ctaHref?: string | null;
+  sharedGoalLabel?: string | null;
+  sharedGoalText?: string | null;
+  roles?: ProcessWorkingTogetherRole[] | null;
+  responsibilities?: ProcessResponsibilityRow[] | null;
+  summaryTitle?: string | null;
+  summaryText?: string | null;
+  highlights?: Array<string | null> | null;
+  summaryCtaLabel?: string | null;
+  summaryCtaHref?: string | null;
+};
+
+export type ProcessWhyItMattersItem = {
+  title?: string | null;
+  description?: string | null;
+  icon?: {
+    url?: string | null;
+    alt?: string | null;
+  } | null;
+};
+
+export type ProcessWhyItMattersData = {
+  eyebrow?: string | null;
+  headline?: string | null;
+  introduction?: string | null;
+  ctaLabel?: string | null;
+  ctaHref?: string | null;
+  items?: ProcessWhyItMattersItem[] | null;
+};
+
 export type ProcessPageData = {
   title?: string | null;
   seo?: SeoData | null;
   introduction?: string | null;
+  hero?: {
+    eyebrow?: string | null;
+    headline?: string | null;
+    introduction?: string | null;
+    secondaryCtaLabel?: string | null;
+    secondaryCtaHref?: string | null;
+    image?: {
+      url?: string | null;
+      alt?: string | null;
+      caption?: string | null;
+    } | null;
+  } | null;
   steps?: ProcessStepSource[] | null;
   detail?: string | null;
   operatingPrinciplesIntro?: string | null;
   operatingPrinciples?: DifferentiatorItemSource[] | null;
+  whyItMatters?: ProcessWhyItMattersData | null;
+  workingTogether?: ProcessWorkingTogetherData | null;
+  launchConfidence?: {
+    eyebrow?: string | null;
+    headline?: string | null;
+    introduction?: string | null;
+    checklistLabel?: string | null;
+    ctaLabel?: string | null;
+    areas?: Array<{
+      _key?: string | null;
+      id?: string | null;
+      title?: string | null;
+      description?: string | null;
+      checks?: Array<string | null> | null;
+    } | null> | null;
+  } | null;
+  afterLaunch?: {
+    eyebrow?: string | null;
+    headline?: string | null;
+    introduction?: string | null;
+    repeatLabel?: string | null;
+    steps?: Array<{
+      _key?: string | null;
+      id?: string | null;
+      title?: string | null;
+      description?: string | null;
+      output?: string | null;
+    } | null> | null;
+  } | null;
   cta?: PageAction;
 };
 

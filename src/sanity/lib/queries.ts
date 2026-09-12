@@ -47,6 +47,7 @@ export const homePageQuery = defineQuery(`
   *[_type == "homePage"][0]{
     title,
     seo,
+    "image": image{"url": asset->url, alt},
     hero,
     heroCta,
     problem,
@@ -60,7 +61,7 @@ export const homePageQuery = defineQuery(`
     industries,
     closingCta,
     closingCtaAction,
-    "offerCards": *[_type == "offer"] | order(title asc) {
+    "offerCards": *[_type == "offer"] | order(coalesce(order, 9999) asc, title asc) {
       title,
       "slug": slug.current,
       summary,
@@ -85,10 +86,21 @@ export const offerPageQuery = defineQuery(`
     "slug": slug.current,
     summary,
     positioningStatement,
+    outcomePrompt,
+    shortTransformation,
+    primaryGoal,
+    bestFor,
+    fitReasons,
     "problem": pt::text(problem),
     "solution": pt::text(solution),
     deliverables,
     investmentRange,
+    investmentTiers[]{
+      label,
+      amount,
+      description,
+      timeline
+    },
     timeline,
     deliverySteps,
     cta,
@@ -96,6 +108,32 @@ export const offerPageQuery = defineQuery(`
       "title": name,
       "slug": slug.current
     }
+  }
+`);
+
+export const offerDirectoryQuery = defineQuery(`
+  *[_type == "offer" && defined(slug.current)] | order(coalesce(order, 9999) asc, title asc){
+    title,
+    order,
+    "image": image{"url": asset->url, alt},
+    "slug": slug.current,
+    summary,
+    positioningStatement,
+    outcomePrompt,
+    shortTransformation,
+    primaryGoal,
+    bestFor,
+    fitReasons,
+    deliverables,
+    investmentRange,
+    investmentTiers[]{
+      label,
+      amount,
+      description,
+      timeline
+    },
+    timeline,
+    cta
   }
 `);
 
@@ -118,10 +156,68 @@ export const processPageQuery = defineQuery(`
     title,
     seo,
     "introduction": pt::text(introduction),
+    hero{
+      eyebrow,
+      headline,
+      introduction,
+      secondaryCtaLabel,
+      secondaryCtaHref,
+      "image": image{
+        "url": asset->url,
+        alt,
+        caption
+      }
+    },
     steps,
     "detail": pt::text(detail),
     "operatingPrinciplesIntro": pt::text(operatingPrinciplesIntro),
     operatingPrinciples,
+    whyItMatters{
+      eyebrow,
+      headline,
+      introduction,
+      ctaLabel,
+      ctaHref,
+      items[]{
+        title,
+        description,
+        "icon": icon{
+          "url": asset->url,
+          alt
+        }
+      }
+    },
+    workingTogether{
+      eyebrow,
+      headline,
+      introduction,
+      ctaLabel,
+      ctaHref,
+      sharedGoalLabel,
+      sharedGoalText,
+      roles[]{
+        label,
+        detail,
+        "icon": icon{
+          "url": asset->url,
+          alt
+        }
+      },
+      responsibilities[]{
+        title,
+        detail,
+        studio,
+        team,
+        together
+      },
+      summaryTitle,
+      summaryText,
+      highlights,
+      summaryCtaLabel,
+      summaryCtaHref
+    },
+    launchConfidence,
+    afterLaunch,
     cta
   }
 `);

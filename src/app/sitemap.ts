@@ -6,13 +6,13 @@ import {getSitemapContent, type SitemapContent} from "@/sanity/lib/siteSeo";
 const fixedPaths = [
   "/",
   "/work",
+  "/services",
   "/services/signature-website",
   "/services/landing-page-sprint",
   "/services/digital-product-build",
   "/services/growth-partnership",
   "/services/digital-elevation-audit",
   "/process",
-  "/about",
   "/insights",
   "/contact",
 ];

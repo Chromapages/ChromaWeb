@@ -16,7 +16,7 @@ export function HomeSection({section, number, tone = "light", children}: HomeSec
 
   return (
     <section className={isDark ? "bg-ink text-canvas" : "bg-canvas text-ink"}>
-      <div className="mx-auto w-full max-w-main px-6 py-20 lg:px-10 lg:py-28">
+      <div className="mx-auto w-full max-w-content-wide px-6 py-20 lg:px-10 lg:py-28">
         <div className="flex items-center gap-3">
           <p className={isDark ? "font-body text-xs font-semibold tracking-[0.18em] text-canvas/85 uppercase" : "font-body text-xs font-semibold tracking-[0.18em] text-teal uppercase"}>{number}</p>
           <span aria-hidden="true" className={isDark ? "h-px w-8 bg-canvas/40" : "h-px w-8 bg-teal/40"} />

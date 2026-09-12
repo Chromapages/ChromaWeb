@@ -65,7 +65,7 @@ export default async function RootLayout({children}: Readonly<{children: React.R
   const organizationJsonLd = buildOrganizationSchema();
 
   return (
-    <html lang="en" className={`${inter.variable} ${plusJakartaSans.variable}`}>
+    <html lang="en" className={`${inter.variable} ${plusJakartaSans.variable}`} suppressHydrationWarning>
       <head>
         <JsonLd data={organizationJsonLd} />
       </head>

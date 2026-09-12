@@ -34,8 +34,8 @@ export function IndustryPage({data}: {data: IndustryPageData}) {
           items: metadataItems,
         }}
         backLink={{
-          href: "/industries",
-          label: "Back to Industry Verticals",
+          href: "/services#industries",
+          label: "Back to Industry Solutions",
         }}
         body={data.positioning}
         cta={data.cta}

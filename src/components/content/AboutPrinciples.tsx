@@ -1,17 +1,25 @@
 import {PageActionLink, type PageStep} from "./PagePrimitives";
 
-export function AboutPrinciples({principles}: {principles?: PageStep[] | null}) {
+export function AboutPrinciples({
+  principles,
+  id = "about-principles",
+  processHref = "/process",
+}: {
+  principles?: PageStep[] | null;
+  id?: string;
+  processHref?: string;
+}) {
   const items = principles?.filter((item) => item?.title?.trim()) ?? [];
   if (!items.length) return null;
 
   return (
-    <section id="about-principles" aria-labelledby="about-principles-title" tabIndex={-1} className="scroll-mt-24 bg-ink text-canvas">
+    <section id={id} aria-labelledby={`${id}-title`} tabIndex={-1} className="scroll-mt-24 bg-ink text-canvas">
       <div className="mx-auto w-full max-w-main px-6 py-16 lg:px-10 lg:py-24">
         <div className="flex items-center gap-4">
           <p className="text-xs font-semibold tracking-[0.18em] text-canvas/80 uppercase">01 / Principles</p>
           <span aria-hidden="true" className="h-px w-10 bg-canvas/40" />
         </div>
-        <h2 id="about-principles-title" className="mt-4 max-w-4xl font-display text-3xl leading-tight tracking-[-0.035em] text-balance sm:text-4xl lg:text-5xl">
+        <h2 id={`${id}-title`} className="mt-4 max-w-4xl font-display text-3xl leading-tight tracking-[-0.035em] text-balance sm:text-4xl lg:text-5xl">
           How the work is approached
         </h2>
 
@@ -35,7 +43,7 @@ export function AboutPrinciples({principles}: {principles?: PageStep[] | null}) 
 
         <div className="mt-8 flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between lg:mt-10">
           <p className="text-xs font-semibold tracking-[0.18em] text-canvas/70 uppercase">Principles into practice</p>
-          <PageActionLink action={{label: "Explore our delivery process →", href: "/process"}} analyticsLocation="about_principles" inverse />
+          <PageActionLink action={{label: "Explore our delivery process →", href: processHref}} analyticsLocation="about_principles" inverse />
         </div>
       </div>
     </section>

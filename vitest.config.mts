@@ -9,4 +9,7 @@ export default defineConfig({
       "@": path.resolve(path.dirname(fileURLToPath(import.meta.url)), "src"),
     },
   },
+  test: {
+    include: ["src/**/*.{test,spec}.?(c|m)[jt]s?(x)"],
+  },
 });

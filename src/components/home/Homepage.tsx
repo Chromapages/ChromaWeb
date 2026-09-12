@@ -9,7 +9,10 @@ import {HeroGradientBackground} from "./HeroGradientBackground";
 import {HomeIndustries} from "./HomeIndustries";
 import {HomeOffers} from "./HomeOffers";
 import {HomeMismatch} from "./HomeMismatch";
+import {HomeSolution} from "./HomeSolution";
 import {HomeStandard} from "./HomeStandard";
+import {HomeProof} from "./HomeProof";
+import {HomeProcess} from "./HomeProcess";
 
 export type HomepageData = {
   title?: string | null;
@@ -78,7 +81,7 @@ export function Homepage({data}: {data: HomepageData | null}) {
           <div className="absolute inset-0 bg-gradient-to-t from-ink via-transparent to-ink/60" />
         </div>
 
-        <div className="relative z-10 mx-auto grid min-h-[min(780px,calc(100svh-80px))] w-full max-w-main items-center gap-12 px-6 py-20 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:px-10 lg:py-28">
+        <div className="relative z-10 mx-auto grid min-h-[min(780px,calc(100svh-80px))] w-full max-w-content-wide items-center gap-12 px-6 py-20 lg:grid-cols-[minmax(0,1.25fr)_minmax(0,0.75fr)] lg:px-10 lg:py-28">
           <div className="max-w-3xl">
             <p className="text-xs font-semibold tracking-[0.2em] text-teal-400 uppercase">
               {data.hero?.eyebrow ?? "Premium Web Design + Development"}
@@ -204,17 +207,28 @@ export function Homepage({data}: {data: HomepageData | null}) {
         </div>
       </section>
 
-      {/* 02 / Customer Problem & Sector Focus */}
+      {/* 01 / Customer Problem — Digital Mismatch */}
       <HomeMismatch section={data.problem} />
-      <HomeIndustries section={data.industries} industries={data.industryCards} />
 
-      {/* 03 / Defined Engagements (Clear Scopes, Deliverables, & Timelines) */}
-      <HomeOffers section={data.offers} offers={data.offerCards} />
+      {/* 02 / Dependable Solution — Chromapages vs. Traditional Agency */}
+      <HomeSolution section={data.solution} />
 
-      {/* 04 / The Standard & Evidence (5 Operating Principles & Audited Benchmarks) */}
+      {/* 03 / The Standard & Evidence — 5 Operating Principles */}
       <HomeStandard section={data.standard} />
 
-      {/* 05 / Next Step (Concept 1: Executive Diagnostic Bento CTA - Compacted) */}
+      {/* 04 / Selected Work & Proof — Evidence Before Adjectives */}
+      <HomeProof section={data.proof} caseStudies={data.caseStudies} />
+
+      {/* 05 / Defined Engagements — Fixed-Scope Offers */}
+      <HomeOffers section={data.offers} offers={data.offerCards} />
+
+      {/* 06 / Delivery Process — Assembly Line */}
+      <HomeProcess section={data.process} steps={data.processSteps} />
+
+      {/* 07 / Industry Relevance — Sector-Specific Architectures */}
+      <HomeIndustries section={data.industries} industries={data.industryCards} />
+
+      {/* 08 / Project Fit Review — Closing CTA */}
       <section className="relative overflow-hidden bg-ink text-canvas border-t border-white/10">
         <ChromaEdge dark />
         
@@ -222,12 +236,12 @@ export function Homepage({data}: {data: HomepageData | null}) {
         <div className="pointer-events-none absolute -top-24 right-1/4 h-80 w-80 rounded-full bg-indigo/20 blur-3xl" />
         <div className="pointer-events-none absolute -bottom-24 left-1/4 h-80 w-80 rounded-full bg-teal/15 blur-3xl" />
 
-        <div className="relative z-10 mx-auto grid w-full max-w-main items-center gap-8 lg:gap-12 px-6 py-12 lg:py-16 lg:grid-cols-[minmax(0,1.3fr)_minmax(18rem,0.7fr)] lg:px-10">
+        <div className="relative z-10 mx-auto grid w-full max-w-content-wide items-center gap-8 lg:gap-12 px-6 py-12 lg:py-16 lg:grid-cols-[minmax(0,1.3fr)_minmax(18rem,0.7fr)] lg:px-10">
           {/* Left Column: Strategic Narrative & Actions */}
           <div className="max-w-2xl">
             <div className="flex items-center gap-2.5">
               <span className="font-display text-[11px] font-semibold tracking-[0.2em] text-teal-400 uppercase">
-                05 / Project Fit Review
+                08 / Project Fit Review
               </span>
               <span className="h-px w-6 bg-teal-400/40" />
             </div>
@@ -282,7 +296,7 @@ export function Homepage({data}: {data: HomepageData | null}) {
             </div>
           </div>
 
-          {/* Right Column: Concept 1 Architectural Parameter Card */}
+          {/* Right Column: Engagement Parameters Card */}
           <aside
             aria-label="Engagement parameters and capacity"
             className="w-full max-w-md lg:justify-self-end"

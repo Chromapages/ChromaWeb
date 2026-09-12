@@ -1,4 +1,4 @@
-export function AboutPerspective({detail}: {detail?: string | null}) {
+export function AboutPerspective({detail, id = "about-perspective"}: {detail?: string | null; id?: string}) {
   const [lead, ...paragraphs] = (detail ?? "")
     .split(/\r?\n\s*\r?\n/)
     .map((paragraph) => paragraph.trim())
@@ -7,13 +7,13 @@ export function AboutPerspective({detail}: {detail?: string | null}) {
   if (!lead) return null;
 
   return (
-    <section id="about-perspective" aria-labelledby="about-perspective-title" className="scroll-mt-24 bg-canvas text-ink">
+    <section id={id} aria-labelledby={`${id}-title`} className="scroll-mt-24 bg-canvas text-ink">
       <div className="mx-auto w-full max-w-main px-6 py-16 lg:px-10 lg:py-24">
         <div className="flex items-center gap-4">
           <p className="text-xs font-semibold tracking-[0.18em] text-teal uppercase">02 / Studio perspective</p>
           <span aria-hidden="true" className="h-px w-10 shrink-0 bg-teal/40" />
         </div>
-        <h2 id="about-perspective-title" className="mt-4 max-w-4xl font-display text-3xl leading-tight tracking-[-0.035em] text-balance sm:text-4xl lg:text-5xl">
+        <h2 id={`${id}-title`} className="mt-4 max-w-4xl font-display text-3xl leading-tight tracking-[-0.035em] text-balance sm:text-4xl lg:text-5xl">
           The operating point of view
         </h2>
 

@@ -7,7 +7,7 @@ export function SiteFooter({logoUrl}: {logoUrl?: string | null}) {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-white/10 bg-[#0B1220] text-canvas">
+    <footer className="border-t border-white/10 bg-ink text-canvas">
       <div className="mx-auto w-full max-w-main px-6 py-16 lg:px-10 lg:py-20">
         <div className="grid gap-12 lg:grid-cols-[1.5fr_1fr_1fr_1.2fr]">
           {/* Brand Column */}
@@ -28,12 +28,17 @@ export function SiteFooter({logoUrl}: {logoUrl?: string | null}) {
             </div>
           </div>
 
-          {/* Navigation Column 1: Services */}
+          {/* Navigation Column 1: Solutions */}
           <div>
             <h3 className="font-display text-xs font-semibold tracking-[0.2em] text-teal-400 uppercase">
-              Services
+              Solutions
             </h3>
             <ul className="mt-4 grid gap-2.5 text-sm text-canvas/80">
+              <li>
+                <Link className="hover:text-teal-300 focus-visible:outline-2 focus-visible:outline-teal" href="/services">
+                  Solutions Overview
+                </Link>
+              </li>
               <li>
                 <Link className="hover:text-teal-300 focus-visible:outline-2 focus-visible:outline-teal" href="/services/signature-website">
                   Signature Website
@@ -75,22 +80,12 @@ export function SiteFooter({logoUrl}: {logoUrl?: string | null}) {
               </li>
               <li>
                 <Link className="hover:text-teal-300 focus-visible:outline-2 focus-visible:outline-teal" href="/process">
-                  The Chromapages Standard
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-teal-300 focus-visible:outline-2 focus-visible:outline-teal" href="/industries">
-                  Industries Hub
+                  How We Work
                 </Link>
               </li>
               <li>
                 <Link className="hover:text-teal-300 focus-visible:outline-2 focus-visible:outline-teal" href="/insights">
                   Insights & Strategy
-                </Link>
-              </li>
-              <li>
-                <Link className="hover:text-teal-300 focus-visible:outline-2 focus-visible:outline-teal" href="/about">
-                  About Studio
                 </Link>
               </li>
             </ul>

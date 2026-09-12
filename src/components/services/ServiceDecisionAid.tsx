@@ -3,6 +3,7 @@
 import {useState, useRef, useEffect} from "react";
 import Link from "next/link";
 import {ChromaEdge} from "@/components/ui/ChromaEdge";
+import type {OfferPageData} from "@/components/offer/OfferPage";
 
 interface QuestionOption {
   id: string;
@@ -24,23 +25,23 @@ const questions: Question[] = [
     options: [
       {
         id: "urgent",
-        label: "Urgent campaign launch in 2–3 weeks",
-        sublabel: "Time-boxed conversion sprint aligned to an immediate marketing or launch date.",
+        label: "Campaign or launch work with a defined near-term date",
+        sublabel: "A focused conversion engagement aligned to an active marketing or launch need.",
       },
       {
         id: "standard",
-        label: "Standard strategic rebuild in 8–12 weeks",
+        label: "Strategic website transformation",
         sublabel: "Comprehensive strategy, custom design, engineering, and content systems.",
       },
       {
         id: "phased",
-        label: "Phased milestone delivery over 3–6+ months",
+        label: "Phased custom-product delivery",
         sublabel: "Paid technical discovery followed by agile sprint-based custom product releases.",
       },
       {
         id: "flexible",
-        label: "Ongoing monthly capacity (Continuous retainer)",
-        sublabel: "Dedicated 20–60h monthly design & engineering capacity for existing live builds.",
+        label: "Ongoing improvement capacity",
+        sublabel: "Structured design and engineering capacity for an existing live build.",
       },
       {
         id: "unsure",
@@ -109,7 +110,7 @@ const questions: Question[] = [
       {
         id: "unsure",
         label: "Not sure / Uncover why our current site is losing qualified deals",
-        sublabel: "Forensic 28-point diagnostic across positioning, performance, and accessibility.",
+        sublabel: "A structured diagnosis across positioning, customer paths, performance, and accessibility.",
         isNotSure: true,
       },
     ],
@@ -263,7 +264,7 @@ function evaluateDecisionTree(answers: Record<number, string>): RecommendationOu
   };
 }
 
-export function ServiceDecisionAid() {
+export function ServiceDecisionAid({offers}: {offers?: OfferPageData[] | null}) {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const [currentStep, setCurrentStep] = useState<number>(0);
   const [answers, setAnswers] = useState<Record<number, string>>({});
@@ -344,79 +345,50 @@ export function ServiceDecisionAid() {
     setValidationError(null);
   };
 
-  const recommendation = evaluateDecisionTree(answers);
+  const recommendationTemplate = evaluateDecisionTree(answers);
+  const recommendationSlug = new URLSearchParams(recommendationTemplate.ctaHref.split("?")[1] ?? "").get("service");
+  const recommendationOffer = offers?.find((offer) => offer.slug === recommendationSlug);
+  const recommendation = recommendationOffer?.slug && recommendationOffer.title ? {
+    ...recommendationTemplate,
+    title: recommendationOffer.title,
+    explanation: recommendationOffer.summary ?? recommendationOffer.positioningStatement ?? "",
+    range: recommendationOffer.investmentRange ?? "",
+    timeline: recommendationOffer.timeline ?? "",
+    ctaLabel: recommendationOffer.cta?.label ?? `Explore ${recommendationOffer.title} →`,
+    ctaHref: recommendationOffer.cta?.href ?? `/services/${recommendationOffer.slug}`,
+    cardAnchorId: `outcome-${recommendationOffer.slug}`,
+  } : null;
   const activeAnswer = answers[currentStep];
   const isLastStep = currentStep === questions.length - 1;
 
   const stepLabels = ["1. Timeline", "2. Scope Clarity", "3. Commercial Goal"];
 
   return (
-    <div className="relative overflow-hidden rounded-xl sm:rounded-2xl border border-indigo/20 bg-ink text-canvas shadow-xl p-4 sm:p-6 lg:p-8">
+    <div className="relative overflow-hidden rounded-xl border border-white/15 bg-white/[0.04] p-5 text-canvas shadow-sm sm:p-7">
       <ChromaEdge dark />
 
       {!isOpen ? (
-        /* COLLAPSED PREVIEW CARD (DEFAULT STATE): Compact Mobile-First Split Terminal */
-        <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-          {/* Left Column: Context, Problem, & Value Hook */}
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-display text-[10px] sm:text-[11px] font-semibold tracking-[0.2em] text-teal-400 uppercase">
-                Diagnostic Fit Assessment
-              </span>
-              <span className="h-px w-5 sm:w-6 bg-teal-400/40" />
-            </div>
-
-            <h2 className="mt-1.5 font-display text-lg sm:text-2xl font-bold tracking-tight text-canvas break-words">
-              Not sure which engagement fits your commercial scope?
-            </h2>
-
-            <p className="mt-1.5 text-xs leading-relaxed text-canvas/80 sm:text-sm max-w-2xl break-words">
-              Answer 3 structured questions to identify the exact engagement calibrated to your timeline urgency, scope clarity, and commercial objectives.
-            </p>
-
-            {/* Friction-Reduction Microcopy Row - Directly Adjacent to CTA */}
-            <div className="mt-3 sm:mt-4 flex flex-wrap items-center gap-2.5 sm:gap-4 text-[11px] sm:text-xs text-canvas/75">
-              <span className="flex items-center gap-1 font-medium text-teal-300">
-                <span aria-hidden="true">⏱</span> Takes 30 seconds
-              </span>
-              <span className="h-3 w-px bg-white/20" />
-              <span className="flex items-center gap-1">
-                <span className="text-teal-300" aria-hidden="true">🔒</span> No email required
-              </span>
-              <span className="h-3 w-px bg-white/20" />
-              <span className="text-canvas/60">
-                Instant recommendation
-              </span>
-            </div>
-          </div>
-
-          {/* Right Column: Preview Slip & Full-Width 48px Mobile CTA Target */}
-          <div className="flex flex-col justify-between rounded-lg sm:rounded-xl border border-white/10 bg-white/[0.04] p-4 sm:p-5">
-            <div>
-              <span className="font-display text-[10px] sm:text-[11px] font-semibold tracking-[0.18em] text-teal-300 uppercase block">
-                3-Step Question Preview:
-              </span>
-              <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] sm:text-[11px] text-canvas/80 font-medium">
-                <span className="rounded-md bg-white/10 px-2 py-0.5">1. Scope Clarity</span>
-                <span className="rounded-md bg-white/10 px-2 py-0.5">2. Timeline</span>
-                <span className="rounded-md bg-white/10 px-2 py-0.5">3. Objective</span>
-              </div>
-            </div>
-
-            <div className="mt-4 pt-3.5 border-t border-white/10">
-              <button
-                ref={launchButtonRef}
-                type="button"
-                onClick={handleOpenDiagnostic}
-                className="inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-lg bg-teal px-5 py-3 text-xs sm:text-sm font-semibold text-white transition-colors hover:bg-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-400 shadow-md shadow-teal/20 cursor-pointer"
-                aria-expanded={false}
-                aria-label="Launch interactive 30-second fit diagnostic assessment"
-              >
-                <span>Launch Fit Diagnostic</span>
-                <span aria-hidden="true">→</span>
-              </button>
-            </div>
-          </div>
+        <div>
+          <p className="text-[10px] font-semibold tracking-[0.2em] text-teal-400 uppercase">Not sure which engagement fits?</p>
+          <h2 className="mt-3 max-w-md font-display text-2xl font-bold leading-tight tracking-[-0.035em] text-canvas sm:text-3xl">Get a clear recommendation in minutes.</h2>
+          <p className="mt-3 max-w-md text-sm leading-6 text-canvas/75">Answer a few questions about your business goals, and we’ll recommend the right published engagement.</p>
+          <ul className="mt-5 grid grid-cols-3 divide-x divide-white/15 text-[10px] font-medium leading-4 text-canvas/75" aria-label="Diagnostic details">
+            <li className="pr-3"><span aria-hidden="true" className="mr-1 text-base text-teal-400">◷</span>3 questions</li>
+            <li className="px-3"><span aria-hidden="true" className="mr-1 text-base text-teal-400">↗</span>No email required</li>
+            <li className="pl-3"><span aria-hidden="true" className="mr-1 text-base text-teal-400">✓</span>Clear next step</li>
+          </ul>
+          <button
+            ref={launchButtonRef}
+            type="button"
+            onClick={handleOpenDiagnostic}
+            className="mt-6 inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-teal px-5 py-3 text-sm font-semibold text-white transition-colors hover:bg-indigo active:bg-indigo focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-400"
+            aria-expanded={false}
+            aria-label="Launch engagement diagnostic"
+          >
+            <span>Launch the Engagement Diagnostic</span>
+            <span aria-hidden="true">→</span>
+          </button>
+          <p className="mt-5 text-center text-[9px] font-semibold tracking-[0.2em] text-canvas/55 uppercase">Strategy / Design / Development / Growth</p>
         </div>
       ) : (
         /* EXPANDED INTERACTIVE FORM: Full 3-Step Accessible Assessment */
@@ -614,7 +586,7 @@ export function ServiceDecisionAid() {
                   </div>
                 </div>
               </form>
-            ) : (
+            ) : recommendation ? (
               /* Result Recommendation Card */
               <div
                 className={`rounded-lg sm:rounded-xl border p-4 sm:p-6 lg:p-8 ${
@@ -645,15 +617,17 @@ export function ServiceDecisionAid() {
                       {recommendation.badge}
                     </span>
                   </div>
-                  <span
-                    className={`rounded-full border px-2.5 py-0.5 text-[11px] sm:text-xs font-semibold ${
-                      recommendation.isEscapeValve
-                        ? "border-indigo/30 bg-indigo/20 text-indigo-200"
-                        : "border-teal/30 bg-teal/20 text-teal-200"
-                    }`}
-                  >
-                    {recommendation.range} • {recommendation.timeline}
-                  </span>
+                  {recommendation.range || recommendation.timeline ? (
+                    <span
+                      className={`rounded-full border px-2.5 py-0.5 text-[11px] sm:text-xs font-semibold ${
+                        recommendation.isEscapeValve
+                          ? "border-indigo/30 bg-indigo/20 text-indigo-200"
+                          : "border-teal/30 bg-teal/20 text-teal-200"
+                      }`}
+                    >
+                      {[recommendation.range, recommendation.timeline].filter(Boolean).join(" • ")}
+                    </span>
+                  ) : null}
                 </div>
 
                 <div className="mt-4">
@@ -708,25 +682,12 @@ export function ServiceDecisionAid() {
                   </button>
                 </div>
 
-                {/* Optional Post-Result Value-Exchange Module (100% Ungated Result Above) */}
-                <div className="mt-5 pt-4 border-t border-white/10">
-                  <div className="rounded-lg border border-white/10 bg-white/[0.03] p-3.5 sm:p-5">
-                    <div className="flex items-center gap-2">
-                      <span className="text-teal-400 text-xs" aria-hidden="true">📄</span>
-                      <h4 className="font-display text-xs sm:text-sm font-semibold text-canvas">
-                        Need to share this recommendation with your team?
-                      </h4>
-                    </div>
-                    <p className="mt-1.5 text-[11px] sm:text-xs text-canvas/75 leading-relaxed break-words">
-                      Receive a tailored Scope Brief & Procurement Checklist (PDF + Markdown) formatted for executive and stakeholder review. No spam, ever.
-                    </p>
-
-                    <ScopeBriefCapture
-                      recommendationTitle={recommendation.title}
-                      recommendationTier={recommendation.range}
-                    />
-                  </div>
-                </div>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-white/15 bg-white/[0.04] p-5" role="status">
+                <h3 className="font-display text-xl font-bold text-canvas">A published recommendation is not available yet.</h3>
+                <p className="mt-2 text-sm leading-6 text-canvas/75">Use Project Fit to discuss the appropriate next step without relying on an unpublished offer.</p>
+                <Link className="mt-5 inline-flex min-h-11 items-center justify-center rounded-lg bg-teal px-5 text-sm font-semibold text-canvas focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-teal-400" href="/contact">Discuss Project Fit →</Link>
               </div>
             )}
           </div>
@@ -736,6 +697,7 @@ export function ServiceDecisionAid() {
   );
 }
 
+/* Legacy simulated email capture retained only for reference; it is intentionally excluded from production.
 interface ScopeBriefCaptureProps {
   recommendationTitle: string;
   recommendationTier: string;
@@ -835,3 +797,4 @@ function ScopeBriefCapture({recommendationTitle, recommendationTier}: ScopeBrief
     </form>
   );
 }
+*/

@@ -131,13 +131,13 @@ export function HomeProcess({section, steps}: HomeProcessProps) {
       {/* Background blueprint grid styling */}
       <div className="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#EFEFED_1px,transparent_1px)] [background-size:24px_24px]" />
 
-      <div className="mx-auto w-full max-w-main px-6 lg:px-10 relative">
+      <div className="mx-auto w-full max-w-content-wide px-6 lg:px-10 relative">
         {/* Section Header with Horizontal Track Controls */}
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <div className="flex items-center gap-3">
               <span className="font-display text-xs font-semibold tracking-[0.2em] text-teal uppercase">
-                07 / Delivery Process
+                06 / Delivery Process
               </span>
               <span className="h-px w-8 bg-teal/40" />
             </div>

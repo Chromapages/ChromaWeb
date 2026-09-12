@@ -9,6 +9,7 @@
   --font-display: var(--font-heading);
   --font-body: var(--font-inter);
   --container-main: 80rem;
+  --container-content-wide: 90rem;
   --container-editorial: 47.5rem;
 }
 

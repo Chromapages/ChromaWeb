@@ -6,7 +6,29 @@ export const offer = defineType({
   type: "document",
   fields: [
     defineField({name: "title", title: "Title", type: "string", validation: (rule) => rule.required()}),
+    defineField({
+      name: "order",
+      title: "Display order",
+      description: "Lower numbers appear first on the Services page. Leave empty to fall back to title order.",
+      type: "number",
+      validation: (rule) => rule.integer().positive(),
+    }),
     defineField({name: "seo", title: "SEO metadata", type: "seo"}),
+    defineField({
+      name: "image",
+      title: "Service image",
+      description: "Optional approved image for this service. Use real work, an approved process artifact, or a clearly labeled concept study.",
+      type: "image",
+      options: {hotspot: true},
+      fields: [
+        defineField({
+          name: "alt",
+          title: "Alternative text",
+          description: "Describe the image when it conveys useful information; leave blank only when it is decorative.",
+          type: "string",
+        }),
+      ],
+    }),
     defineField({
       name: "slug",
       title: "Slug",
@@ -16,6 +38,18 @@ export const offer = defineType({
     }),
     defineField({name: "summary", title: "Summary", type: "text", rows: 3}),
     defineField({name: "positioningStatement", title: "Positioning statement", type: "text", rows: 3}),
+    defineField({name: "outcomePrompt", title: "Services outcome prompt", description: "The buyer situation shown in the Services outcome rail.", type: "string"}),
+    defineField({name: "shortTransformation", title: "Short transformation statement", description: "A concise recommendation-panel statement.", type: "string"}),
+    defineField({name: "primaryGoal", title: "Primary goal", description: "The concise goal shown in the Services comparison register.", type: "string"}),
+    defineField({name: "bestFor", title: "Best for", description: "The concise buyer-fit description shown in the Services comparison register.", type: "string"}),
+    defineField({
+      name: "fitReasons",
+      title: "Why this fits",
+      description: "Up to three concise reasons used by the Services recommendation panel.",
+      type: "array",
+      of: [defineArrayMember({type: "string"})],
+      validation: (rule) => rule.max(3),
+    }),
     defineField({name: "problem", title: "Problem addressed", type: "blockContent"}),
     defineField({name: "solution", title: "Solution", type: "blockContent"}),
     defineField({
@@ -25,6 +59,28 @@ export const offer = defineType({
       of: [defineArrayMember({type: "string"})],
     }),
     defineField({name: "investmentRange", title: "Investment range", type: "string"}),
+    defineField({
+      name: "investmentTiers",
+      title: "Investment breakdown & phases",
+      description: "Optional structured investment breakdown (e.g., Discovery vs. Build vs. Retainer).",
+      type: "array",
+      of: [
+        defineArrayMember({
+          type: "object",
+          name: "investmentTier",
+          title: "Investment Tier / Phase",
+          fields: [
+            defineField({name: "label", title: "Phase / Tier Label", type: "string", validation: (r) => r.required()}),
+            defineField({name: "amount", title: "Investment Amount", type: "string", validation: (r) => r.required()}),
+            defineField({name: "description", title: "Context / Details (Optional)", type: "string"}),
+            defineField({name: "timeline", title: "Phase Timeline (Optional)", type: "string"}),
+          ],
+          preview: {
+            select: {title: "label", subtitle: "amount"},
+          },
+        }),
+      ],
+    }),
     defineField({name: "timeline", title: "Timeline", type: "string"}),
     defineField({
       name: "deliverySteps",
@@ -40,5 +96,5 @@ export const offer = defineType({
       of: [defineArrayMember({type: "reference", to: [{type: "industry"}]})],
     }),
   ],
-  preview: {select: {title: "title", subtitle: "slug.current"}},
+  preview: {select: {title: "title", subtitle: "slug.current", media: "image"}},
 });

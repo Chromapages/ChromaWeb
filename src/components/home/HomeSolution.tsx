@@ -54,12 +54,12 @@ export function HomeSolution({section}: {section?: HomeSolutionData | null}) {
 
   return (
     <section className="bg-ink text-canvas py-20 lg:py-28 relative overflow-hidden">
-      <div className="mx-auto w-full max-w-main px-6 lg:px-10">
+      <div className="mx-auto w-full max-w-content-wide px-6 lg:px-10">
         {/* Section Header */}
         <div className="max-w-4xl">
           <div className="flex items-center gap-3">
             <span className="font-display text-xs font-semibold tracking-[0.2em] text-teal uppercase">
-              04 / Dependable Solution
+              02 / Dependable Solution
             </span>
             <span className="h-px w-8 bg-teal/40" />
           </div>

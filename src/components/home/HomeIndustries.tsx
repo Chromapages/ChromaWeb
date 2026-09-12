@@ -159,12 +159,12 @@ export function HomeIndustries({section}: HomeIndustriesProps) {
       className="border-t border-ink/10 bg-canvas text-ink pt-12 pb-12 lg:pt-16 lg:pb-16 relative overflow-hidden"
       aria-label="Sector Focus"
     >
-      <div className="mx-auto w-full max-w-main px-6 lg:px-10">
+      <div className="mx-auto w-full max-w-content-wide px-6 lg:px-10">
         {/* Section Header */}
         <div className="max-w-3xl">
           <div className="flex items-center gap-3">
             <span className="font-display text-xs font-semibold tracking-[0.2em] text-teal uppercase">
-              02 / Sector Focus
+              07 / Industry Relevance
             </span>
             <span className="h-px w-8 bg-teal/40" />
           </div>
