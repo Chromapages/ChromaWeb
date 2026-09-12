@@ -196,6 +196,12 @@ export const insightsPageQuery = defineQuery(`
   *[_type == "insightsPage"][0]{
     title,
     introduction,
+    "heroImage": select(
+      heroImage.approvalStatus == "approved" && heroImage.rightsConfirmed == true => heroImage{
+        "url": asset->url,
+        alt
+      }
+    ),
     featuredHeading,
     "featuredInsightId": featuredInsight._ref,
     latestHeading,

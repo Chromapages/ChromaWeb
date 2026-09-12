@@ -3,9 +3,11 @@ import Link from "next/link";
 import type {ReactNode} from "react";
 
 import type {SeoData} from "@/lib/seo";
-import {InsightCard, type InsightThumbnail} from "./InsightCard";
+import {GlobalCtaSection} from "./GlobalCtaSection";
+import {InsightsRegister} from "./InsightsRegister";
+import type {InsightThumbnail} from "./InsightCard";
 
-import {PageActionLink, PageHero, type PageAction} from "./PagePrimitives";
+import {PageHero, type PageAction} from "./PagePrimitives";
 import {
   estimateInsightReadingTime,
   formatInsightPublicationDate,
@@ -29,6 +31,7 @@ export type InsightListItem = {
 export type InsightsPageData = {
   title?: string | null;
   introduction?: string | null;
+  heroImage?: {url?: string | null; alt?: string | null} | null;
   featuredHeading?: string | null;
   featuredInsightId?: string | null;
   latestHeading?: string | null;
@@ -57,31 +60,28 @@ export function InsightsIndex({insights, page}: {insights: InsightListItem[] | n
 
   return (
     <main id="main-content" tabIndex={-1}>
-      <PageHero
-        analyticsLocation="insights_hero"
-        layout="editorial"
-        body={introduction}
-        eyebrow="Insights"
-        title={title}
-        navigation={hasInsights ? {label: "Explore the library", links: [{label: featured ? page?.featuredHeading ?? "Featured guide" : page?.latestHeading ?? "Guides", href: "#insights-library"}, {label: "Plan your digital upgrade", href: "/contact"}]} : {label: "Explore", links: [{label: "Plan your digital upgrade", href: "/contact"}]}}
-      />
-      {hasInsights ? (
-        <section id="insights-library" aria-labelledby="insights-library-title" className="scroll-mt-24 bg-canvas text-ink dark:bg-ink dark:text-canvas">
-          <div className="mx-auto w-full max-w-main px-6 py-16 lg:px-10 lg:py-24">
-            <h2 id="insights-library-title" className="font-display text-3xl leading-tight tracking-[-0.035em] text-balance sm:text-4xl">{page?.latestHeading ?? "Latest guides"}</h2>
-            <ul role="list" className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:mt-10 min-[75rem]:grid-cols-3">
-              {orderedItems.map((insight) => (
-                <li key={insight.id ?? insight.slug} className="min-w-0">
-                  <InsightCard insight={insight} featured={insight === featured} />
-                </li>
-              ))}
-            </ul>
+      <section className="relative isolate overflow-hidden bg-ink text-canvas" aria-labelledby="insights-hero-title">
+        <Image alt={page?.heroImage?.alt ?? ""} aria-hidden={page?.heroImage?.url ? undefined : true} className="pointer-events-none absolute inset-0 -z-10 size-full object-cover object-center" fill priority sizes="100vw" src={page?.heroImage?.url ?? "/insights-editorial-hero.png"} />
+        <div className="absolute inset-0 -z-10 bg-ink/30" aria-hidden="true" />
+        <div className="mx-auto grid min-h-[16rem] w-full max-w-[112rem] gap-8 px-5 py-12 sm:px-8 lg:grid-cols-[minmax(0,1fr)_12rem] lg:items-end lg:px-12 lg:py-8 2xl:px-20">
+          <div className="max-w-3xl">
+            <p className="flex items-center gap-3 text-xs font-bold tracking-[0.2em] text-canvas/90 uppercase"><span aria-hidden="true" className="h-px w-5 bg-canvas/80" /> Insights</p>
+            <h1 className="mt-4 max-w-3xl font-display text-4xl font-extrabold leading-[1.02] tracking-[-0.055em] sm:text-5xl lg:text-6xl" id="insights-hero-title">{title}</h1>
+            <p className="mt-4 max-w-2xl text-base leading-7 text-canvas/90 sm:text-lg">{introduction}</p>
           </div>
-        </section>
+          <p className="hidden self-center border-l border-canvas/60 pl-5 text-xs font-bold leading-5 tracking-[0.22em] text-canvas/85 uppercase lg:block">Practical<br />ideas.<br />Real impact.</p>
+        </div>
+      </section>
+      {hasInsights ? (
+        <InsightsRegister featuredId={featured?.id} heading={page?.latestHeading} items={orderedItems} />
       ) : (
         <section className="bg-canvas text-ink"><div className="mx-auto w-full max-w-main px-6 py-16 lg:px-10 lg:py-24"><div className="max-w-[65ch] border-l-2 border-indigo pl-6 sm:pl-8"><p className="text-xs font-semibold tracking-[0.18em] text-teal uppercase">Guide library</p><h2 className="mt-4 font-display text-3xl leading-tight tracking-[-0.035em] text-balance sm:text-4xl">{page?.emptyStateHeading ?? "Practical guides are in development."}</h2><p className="mt-6 text-base leading-8 text-ink/75 sm:text-lg">{page?.emptyStateBody ?? "We are preparing practical perspectives on the decisions behind a stronger digital presence. Until then, we can discuss the operating realities of your next project directly."}</p></div></div></section>
       )}
-      {page?.cta?.label && page.cta.href ? <section className="bg-indigo text-canvas"><div className="mx-auto flex w-full max-w-main flex-col items-start justify-between gap-8 px-6 py-16 lg:flex-row lg:items-end lg:px-10 lg:py-24"><h2 className="max-w-3xl font-display text-4xl tracking-[-0.04em] text-balance sm:text-5xl">{page.ctaHeading ?? "Bring the right questions to your next digital decision."}</h2><PageActionLink action={page.cta} analyticsLocation="insights_closing" inverse /></div></section> : null}
+      <GlobalCtaSection
+        analyticsLocation="insights_closing"
+        primaryAction={page?.cta}
+        title={page?.ctaHeading?.trim() ? page.ctaHeading : undefined}
+      />
     </main>
   );
 }

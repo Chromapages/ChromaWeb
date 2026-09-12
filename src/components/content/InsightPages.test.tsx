@@ -52,6 +52,27 @@ describe("InsightsIndex", () => {
     expect(markup.split("<article")).toHaveLength(count + 1);
     expect(markup.split('href="/insights/guide-')).toHaveLength(count + 1);
   });
+
+  it("renders the global CTA section with default or configured action pathways", () => {
+    const defaultMarkup = renderToStaticMarkup(<InsightsIndex insights={[]} />);
+    expect(defaultMarkup).toContain('id="project-fit"');
+    expect(defaultMarkup).toContain("Choose the");
+    expect(defaultMarkup).toContain("Plan Your Digital Upgrade");
+    expect(defaultMarkup).toContain("Start With an Audit");
+
+    const customMarkup = renderToStaticMarkup(
+      <InsightsIndex
+        insights={[]}
+        page={{
+          ctaHeading: "Custom closing heading",
+          cta: {label: "Book a consultation", href: "/consultation"},
+        }}
+      />
+    );
+    expect(customMarkup).toContain("Custom closing heading");
+    expect(customMarkup).toContain("Book a consultation");
+    expect(customMarkup).toContain('href="/consultation"');
+  });
 });
 
 describe("InsightPage", () => {

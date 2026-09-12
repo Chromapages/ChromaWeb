@@ -13,6 +13,7 @@ export const insightsPage = defineType({
   fields: [
     defineField({name: "title", title: "Hero title", type: "string", group: "hero", validation: (rule) => rule.required()}),
     defineField({name: "introduction", title: "Hero introduction", type: "text", rows: 3, group: "hero"}),
+    defineField({name: "heroImage", title: "Hero image", type: "editorialImage", group: "hero", description: "Optional. Use an approved editorial image with confirmed rights. The public page uses the local editorial fallback when this is empty."}),
     defineField({name: "featuredHeading", title: "Featured-guide heading", type: "string", group: "library"}),
     defineField({
       name: "featuredInsight",
