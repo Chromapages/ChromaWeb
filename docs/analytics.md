@@ -7,6 +7,91 @@ The goal is to measure how users move through the site, which paths produce qual
 
 ---
 
+## 0. Current measurement status and ratified contract — 2026-10-24 (Elliot)
+
+### 0.1 Status (Observed / Unknown)
+
+- **GTM / GA4 are not configured (Observed).** `.env.local` has no `NEXT_PUBLIC_GTM_ID`. `app/layout.tsx` loads the container only when the ID matches `^GTM-[A-Z0-9]+$` and is not the `GTM-XXXX…` placeholder, so the loader and its `<noscript>` iframe are suppressed. **No container ⇒ no GA4 ⇒ no destination receives events.**
+- **No production events have been observed as received.** The earlier handoff placeholder `GTM-XXXXXX` is correctly rejected, so it cannot be evidence that a container exists. Do not report traffic, conversions, or receipt until a valid container is installed and once-only delivery is verified in the destination account.
+- **Events still push to `window.dataLayer` (Observed).** `lib/analytics/events.ts` creates `window.dataLayer` and pushes regardless of GTM, so events are emitted but unconsumed until a valid container is published.
+- **Production GTM container ID, GA4 property, and receipt status: Unknown.**
+
+### 0.2 Ratified event contract (decision — supersedes the snake_case examples below)
+
+The **implemented and tested camelCase contract is canonical**. The `snake_case` parameter names in §5 and §6 below are illustrative only and are **superseded for parameter names**. Evidence for this decision: `components/ui/button.tsx`, `components/forms/request-form.tsx`, `components/sections/faq-accordion.tsx`, and the repository contract tests (`tests/conversion.test.cjs`). The prior repair handoff flagged this as an explicit contract decision; this section resolves it in favor of the shipped code.
+
+Every event is pushed as `{ event: <name>, name: <name>, ...parameters }`. The payload always contains the `event` key GTM triggers on, and also a duplicate `name` key.
+
+**Privacy rule (unchanged):** never send names, email addresses, company names, freeform message text, ticket identifiers/URLs (`issueIdentifier`/`issueUrl`), or secrets to analytics. The tests assert that `form_submit` carries none of these.
+
+### 0.3 Event taxonomy — separate the four stages
+
+| Stage | Business meaning | Event | Fires when | Implemented |
+|---|---|---|---|---|
+| **CTA click** | Intent signal, **not** a conversion | `click_cta` | A tracked `Button`/link with an `analyticsLabel` is clicked | Yes |
+| **Accepted inquiry** | The intake Worker accepted the submission and returned a ticket | `form_submit` | Only after `intakeResponseSchema` confirms `{ success:true, issueIdentifier }` | Yes |
+| **Qualified lead** | A human/system judged the inquiry a fit | *(no website event)* | Not a page event — belongs to qualification (Chroma lead scoring / human review) | No — do not fabricate as a web event |
+| **Actual booking** | A scheduled call exists | `booking_complete` | A scheduler redirect/webhook confirms a booking | No — **no scheduler is wired** (`site.bookingHref = "/contact"`) |
+
+Keeping these distinct prevents three common reporting errors: counting a CTA click as a lead, counting an accepted ticket as a qualified lead, and counting a click on "Book A Call" (which currently opens the contact page) as a completed booking.
+
+### 0.4 Implemented events (exact contract)
+
+| Event | Exact parameters pushed | Trigger / notes |
+|---|---|---|
+| `click_cta` | `event`, `name="click_cta"`, `label`, `location`, `destination` (link buttons only), `pagePath`, `pageType` (`"home"` \| `"marketing"`) | Any `Button` with an `analyticsLabel`. A `Button` **without** `analyticsLabel` emits nothing (see §0.5). |
+| `form_start` | `event`, `name="form_start"`, `location="request-form"`, `pagePath`, `pageType="request"` | First focus inside the request form; guarded to fire once per mount. |
+| `form_submit` | `event`, `name="form_submit"`, `location="request-form"`, `pagePath`, `pageType="request"`, `projectType` (prospect tab only), `budgetRange` (prospect tab, when provided) | Only after the Worker confirms acceptance. No PII, no ticket ID. |
+| `faq_expand` | `event`, `name="faq_expand"`, `location="faq"`, `label=<question>` | FAQ item toggled (fires on **open and close**; no `pagePath`/`pageType`). Currently only on `/pricing`. |
+
+Observed `location` values in use: `header`, `hero`, `homepage-bottom`, `pricing-snapshot`, `project-card`, `service-card` (dead component), `not-found`, `contact-page`.
+
+### 0.5 Observed CTA coverage gaps
+
+These interactive elements currently emit **no** event because they lack an `analyticsLabel`: homepage service cards ("Discuss project"), `FeaturedWork` buttons ("View all case studies", "View Case Study →"), the mobile-menu CTA, and the service-detail sidebar "Book A Call". Decide whether each should be tracked; do not silently add labels because that changes the contract.
+
+### 0.6 Documented but not implemented
+
+`view_page`, `view_service`, `view_case_study`, `view_pricing`, `booking_click`, `booking_complete`, `phone_click`, `email_click`, `scroll_depth`.
+
+Notes: `view_page` is normally served by GA4 page-view measurement; the other `view_*` events would need explicit page-type wiring. `booking_click`/`booking_complete` cannot fire until a scheduler exists. `phone_click` is impossible today — there are no `tel:` links in the site. The contact "Email us" `mailto:` link is tracked as a generic `click_cta` (label `Email us`), not `email_click`.
+
+### 0.7 Analytics launch checks
+
+| # | Check | Owner | Status |
+|---:|---|---|---|
+| 1 | Set a valid, real `NEXT_PUBLIC_GTM_ID` in production and publish the container with a GA4 configuration tag. | Builder/Dev + Elliot | Open |
+| 2 | Confirm once-only event receipt in GA4 DebugView / Tag Assistant for `click_cta`, `form_start`, `form_submit`. | Elliot | Pending release |
+| 3 | Mark `form_submit` (and optionally `booking_click`/`phone_click` once real) as conversions; keep the conversion set tight. | Elliot + Owner | Open |
+| 4 | Confirm `form_submit` fires only on confirmed acceptance and carries no PII (test-covered; re-verify in production). | Elliot | Pending release |
+| 5 | Decide CTA coverage gaps in §0.5. | Elliot + Owner | Open |
+| 6 | Decide the scheduler strategy; only then implement `booking_click`/`booking_complete`. | Owner + Builder/Dev | Open |
+| 7 | Establish UTM conventions for paid/email traffic; note the intake schema currently captures no `source`/UTM field (see `docs/api-spec.md` gap). | Elliot + Owner | Open |
+
+### 0.8 Owners
+
+| Role | Owner |
+|---|---|
+| Measurement strategy & verification | Elliot |
+| Approvals / conversion definitions | Owner (Eric Black, Tier 0) |
+| Environment + GTM/GA4 + scheduler implementation | Builder-Dev — **Unknown** (not named in inspected sources) |
+| Delivery / acceptance source of truth | Intake Worker owner — **Unknown** (per `docs/repair-handoff.md`) |
+| Qualification (qualified-lead reporting) | **Unknown** — lives outside the website |
+
+### 0.9 Unresolved dependencies (measurement)
+
+1. **Valid GTM container ID + GA4 property** (Unknown) — nothing is measured without these.
+2. **Verified intake delivery** — `form_submit` proves acceptance, not that the ticket reached the intended destination or dispatcher; that remains unverified per `docs/repair-handoff.md`.
+3. **Scheduler decision** — blocks real booking measurement.
+4. **Qualification source of truth** — the site intentionally has no "qualified lead" event; CRM/qualification reporting must own it.
+5. **Attribution capture** — no UTM/`source` field exists in the intake schema today.
+
+### 0.10 Changes applied in this pass
+
+**No analytics code was changed.** The existing event contract in `lib/analytics/events.ts` and its callers was preserved; this document was updated to ratify and define that contract, mark the `snake_case` examples superseded, and separate CTA clicks, accepted inquiries, qualified leads, and bookings.
+
+---
+
 ## 1. Analytics Goals
 
 The analytics setup should help Chromapages answer:
@@ -92,6 +177,8 @@ These are supporting indicators of purchase intent.
 ---
 
 ## 5. Event Definitions
+
+> **Superseded for parameter names.** The parameter names below (`cta_label`, `page_path`, etc.) are illustrative planning examples. The canonical, implemented contract is the camelCase one ratified in §0.2–§0.4. Use camelCase (`event`, `name`, `label`, `location`, `destination`, `pagePath`, `pageType`, `projectType`, `budgetRange`) and the four implemented events (`click_cta`, `form_start`, `form_submit`, `faq_expand`). Events in this section marked "Recommended" but absent from §0.4 are not yet implemented.
 
 ## `view_page`
 ### Trigger

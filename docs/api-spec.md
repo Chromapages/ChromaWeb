@@ -1,5 +1,23 @@
 # API Spec
 
+## Current implemented intake contract
+
+`POST /api/intake` is the public Contact page endpoint. `/api/contact` below is a
+legacy endpoint with no current page caller. Intake accepts the existing request
+schema (`name`, `email`, `requestType`, optional controlled `projectType` and
+`budgetRange`, `company`, `message`, empty `honeypot`). It returns:
+
+- `200`: `{ success: true, message, issueIdentifier }`, only after the Worker responds
+  with `{ ok: true, issueId, issueIdentifier, issueUrl }` and valid values.
+- `400`: invalid JSON/fields or filled honeypot.
+- `503`: missing/invalid HTTPS Worker configuration.
+- `502`: upstream rejection, malformed/unconfirmed acceptance or network failure.
+- `504`: upstream timeout (10 seconds).
+
+No private issue URL or raw upstream diagnostic body is returned. No automatic retry
+is made; an acknowledgement loss can leave an accepted issue at the upstream service.
+See [repair handoff](repair-handoff.md) for actual checks and remaining delivery blockers.
+
 ## Purpose
 This document defines the expected API surface for the Chromapages marketing website.
 

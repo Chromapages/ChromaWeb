@@ -10,7 +10,7 @@ import {
   pricingServicesQuery,
   partnersQuery,
 } from './queries'
-import { navigation as staticNavigation, site as staticSite, services as staticServices, processSteps as staticProcessSteps } from '../site'
+import { navigation as staticNavigation, site as staticSite, services as staticServices, pricingOffers as staticPricingOffers, processSteps as staticProcessSteps } from '../site'
 import type { CaseStudy, Service, Partner, PricingOffer, ProcessStep } from '@/types/sanity'
 
 export async function getHomePageData() {
@@ -87,7 +87,7 @@ export async function getServiceBySlug(slug: string): Promise<Service | undefine
 export async function getCaseStudies(): Promise<CaseStudy[]> {
   if (!client) return []
   try {
-    const data = await client.fetch(caseStudiesQuery)
+    const data = await client.fetch<CaseStudy[]>(caseStudiesQuery)
     return data || []
   } catch (error) {
     console.warn('Failed to fetch case studies from Sanity', error)
@@ -98,7 +98,7 @@ export async function getCaseStudies(): Promise<CaseStudy[]> {
 export async function getCaseStudyBySlug(slug: string): Promise<CaseStudy | null> {
   if (!client) return null
   try {
-    const data = await client.fetch(projectBySlugQuery, { slug })
+    const data = await client.fetch<CaseStudy | null>(projectBySlugQuery, { slug })
     return data
   } catch (error) {
     console.warn(`Failed to fetch case study for ${slug}`, error)
@@ -119,14 +119,13 @@ export async function getProcessSteps(): Promise<ProcessStep[]> {
 }
 
 export async function getPricingServices(): Promise<PricingOffer[]> {
-  if (!client) return staticServices as unknown as PricingOffer[]
+  if (!client) return staticPricingOffers
   try {
-    const data = await client.fetch(pricingServicesQuery)
-    if (!data) throw new Error('No pricing services found')
-    return data
+    const data = await client.fetch<PricingOffer[]>(pricingServicesQuery)
+    return data?.length ? data : staticPricingOffers
   } catch (error) {
     console.warn('Failed to fetch pricing services from Sanity, falling back to static data', error)
-    return staticServices
+    return staticPricingOffers
   }
 }
 

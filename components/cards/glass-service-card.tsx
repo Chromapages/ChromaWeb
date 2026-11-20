@@ -11,21 +11,21 @@ type Service = {
 
 export const homepageServices: Service[] = [
   {
-    title: "Digital Experience Design",
+    title: "Website design and builds",
     description:
-      "Interfaces that look premium and make it easy for visitors to take the next step.",
+      "New websites and redesigns for businesses whose online presence needs to catch up.",
     icon: Zap,
   },
   {
-    title: "Landing Pages & Funnels",
+    title: "Landing pages",
     description:
-      "Pages built around a single action, with a clear path from click to call.",
+      "Focused pages for a campaign, promotion, or launch.",
     icon: Target,
   },
   {
-    title: "Performance SEO",
+    title: "Updates and improvements",
     description:
-      "Search strategies that target the searches your buyers actually run.",
+      "Ongoing website updates, fixes, and improvements after launch.",
     icon: Gauge,
   },
 ];
@@ -56,8 +56,10 @@ export default function GlassServiceCard({ service }: GlassServiceCardProps) {
           href="/contact" 
           variant="tertiary" 
           className="text-accent group/btn"
+          analyticsLabel={service.title}
+          analyticsLocation="homepage-services"
         >
-          Discuss project 
+          Send an inquiry
           <span className="ml-2 transition-transform duration-280 group-hover/btn:translate-x-1">→</span>
         </Button>
       </div>

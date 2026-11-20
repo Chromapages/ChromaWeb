@@ -13,8 +13,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="max-w-xs text-base font-medium text-primary/65">
-              We design and build modern websites and web apps that load fast,
-              look premium, and drive more leads.
+              Chromapages designs and builds websites for service businesses ready for an online presence that reflects the quality of their work.
             </p>
           </div>
 
@@ -25,10 +24,10 @@ export default function Footer() {
                 Navigation
               </p>
               <ul className="space-y-3">
-                {["Work", "Services", "Process", "Contact"].map((label) => (
+                {["Services", "Work", "Process", "Pricing", "About", "Contact", "Privacy Policy"].map((label) => (
                   <li key={label}>
                     <Link
-                      href={`/${label.toLowerCase()}`}
+                      href={`/${label.toLowerCase().replaceAll(" ", "-")}`}
                       className="text-sm font-semibold text-primary/70 transition hover:text-accent"
                     >
                       {label}
@@ -39,43 +38,28 @@ export default function Footer() {
             </div>
             <div className="space-y-4">
               <p className="font-display text-sm font-bold uppercase tracking-widest text-primary/40">
-                Contact
+                Services
               </p>
               <ul className="space-y-3">
-                <li>
-                  <a
-                    href="mailto:hello@chromapages.com"
-                    className="text-sm font-semibold text-primary/70 transition hover:text-accent"
-                  >
-                    hello@chromapages.com
-                  </a>
-                </li>
-                <li>
-                  <span className="text-sm font-semibold text-primary/70">
-                    San Francisco, CA
-                  </span>
-                </li>
+                {[
+                  ["Marketing websites", "/services/marketing-websites"],
+                  ["Landing pages", "/services/landing-pages"],
+                  ["Ecommerce", "/services/ecommerce"],
+                  ["Web apps", "/services/web-apps"],
+                  ["Ongoing support", "/services/ongoing-support"],
+                ].map(([label, href]) => (
+                  <li key={href}>
+                    <Link href={href} className="text-sm font-semibold text-primary/70 transition hover:text-accent">
+                      {label}
+                    </Link>
+                  </li>
+                ))}
               </ul>
             </div>
           </div>
 
           {/* Social & Legal Column */}
           <div className="space-y-6 lg:text-right">
-            <div className="flex gap-4 lg:justify-end">
-              {[
-                { label: "LinkedIn", href: "#" },
-                { label: "Twitter", href: "#" },
-              ].map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  aria-label={social.label}
-                  className="inline-flex h-10 w-10 items-center justify-center rounded-functional bg-surface-2 text-primary transition hover:bg-surface-3 hover:text-accent"
-                >
-                  <span className="text-xs font-bold">{social.label[0]}</span>
-                </a>
-              ))}
-            </div>
             <p className="text-sm font-medium text-primary/40">
               © {new Date().getFullYear()} Chromapages. All rights reserved.
             </p>

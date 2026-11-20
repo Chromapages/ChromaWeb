@@ -9,17 +9,17 @@ type PricingSnapshotProps = {
 };
 
 export default function PricingSnapshot({ offers }: PricingSnapshotProps) {
-  const displayOffers = (offers && offers.length > 0 ? offers : staticOffers) as PricingOffer[];
+  const displayOffers = (offers ?? staticOffers) as PricingOffer[];
 
   return (
     <section className="bg-surface-container-low">
       <div className="mx-auto max-w-7xl px-6 py-16 md:px-8 md:py-24">
         <SectionHeading
-          eyebrow="Pricing"
-          title="Simple offer paths with enough structure to keep fit obvious."
-          description="The goal is not to hide pricing behind a wall of vague language. It is to show the kinds of engagements Chromapages handles well."
+          eyebrow="Your project"
+          title="What does your website need next?"
+          description="A new website, a redesign, or ongoing updates involve different work. Tell us what you have and what you want to change."
         />
-        <div className="mt-10 grid gap-5 lg:grid-cols-3">
+        {displayOffers.length > 0 && <div className="mt-10 grid gap-5 lg:grid-cols-3">
           {displayOffers.map((offer, index) => (
             <article
               key={offer._id || offer.title || index}
@@ -57,7 +57,7 @@ export default function PricingSnapshot({ offers }: PricingSnapshotProps) {
               </div>
             </article>
           ))}
-        </div>
+        </div>}
       </div>
     </section>
   );

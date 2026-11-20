@@ -61,9 +61,9 @@ export default function AdminDashboardPage() {
 
       const data = await response.json();
       setIssues(data.issues || []);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      setError(err.message || "An unexpected error occurred while loading requests.");
+      setError((err instanceof Error && err.message) || "An unexpected error occurred while loading requests.");
     } finally {
       setIsLoading(false);
       setIsRefreshing(false);
@@ -81,10 +81,14 @@ export default function AdminDashboardPage() {
 
   const handleLogoutClick = async () => {
     try {
-      await fetch("/api/admin/logout", { method: "POST" });
+      const response = await fetch("/api/admin/logout", { method: "POST" });
+      const result = await response.json();
+      if (!response.ok || result.success !== true) {
+        throw new Error("Logout could not be confirmed.");
+      }
       router.push("/portal-admin/login");
-    } catch (err) {
-      console.error("Logout failed:", err);
+    } catch {
+      setError("Logout could not be confirmed. Please try again.");
     }
   };
 

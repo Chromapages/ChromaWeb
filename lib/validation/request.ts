@@ -13,3 +13,8 @@ export const requestSchema = z.object({
 });
 
 export type RequestFormValues = z.infer<typeof requestSchema>;
+
+export const intakeResponseSchema = z.object({
+  success: z.literal(true),
+  issueIdentifier: z.string().trim().min(1),
+});

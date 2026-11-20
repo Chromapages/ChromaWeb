@@ -37,6 +37,12 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 ## Cloudflare Worker (intake) Deployment
 
+For the current implementation, configuration dependencies, known Worker defects,
+verification evidence, and rollback/QA steps, read the
+[Nadia → Quinn conversion repair handoff](docs/repair-handoff.md). The deployment
+instructions below are reference material; this repair did not deploy or verify
+the operational Worker.
+
 The site forwards form submissions to a Cloudflare Worker that creates Linear issues and routes them to the local `cmd/intake` dispatcher. The Worker is **not** part of this repo — it lives outside the project root.
 
 - **Worker location:** `D:\claude-bridge-sandbox\intake-worker\` (Windows path; lives on the D: drive, not in the F: drive project)

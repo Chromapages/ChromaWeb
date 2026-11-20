@@ -4,7 +4,7 @@ import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import Button from "@/components/ui/button";
-import { featuredProjects } from "@/lib/site";
+import type { CaseStudy } from "@/types/sanity";
 import { cn } from "@/lib/utils";
 
 type HeroProps = {
@@ -12,27 +12,34 @@ type HeroProps = {
   title?: string;
   description?: string;
   primaryAction?: { label: string; href: string };
-  secondaryAction?: { label: string; href: string; variant?: any };
+  secondaryAction?: { label: string; href: string; variant?: "primary" | "secondary" | "tertiary" };
   highlights?: string[];
   panelLabel?: string;
   panelTitle?: string;
   panelItems?: string[];
   isHome?: boolean;
+  projects?: CaseStudy[];
 };
 
 export default function Hero({
-  eyebrow = "Digital Design Elevated",
-  title = "Digital Design Elevated.",
-  description = "We design and build modern websites and web apps that load fast, look premium, and drive more leads.",
-  primaryAction = { label: "Book A Call", href: "/contact" },
-  secondaryAction = { label: "View our work", href: "/work" },
+  eyebrow = "Websites for service businesses",
+  title = "A website that reflects the quality of your business.",
+  description = "Your business has moved forward. Your website should show it. Chromapages designs and builds websites that explain what you offer and make the next step clear.",
+  primaryAction = { label: "Send an inquiry", href: "/contact" },
+  secondaryAction,
   isHome = false,
+  projects = [],
 }: HeroProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const cardStackRef = useRef<HTMLDivElement>(null);
+  const resolvedSecondaryAction = secondaryAction ?? (isHome && projects.length === 0
+    ? { label: "View services", href: "/services" }
+    : { label: "View work", href: "/work" });
 
   useGSAP(
     () => {
+      const media = gsap.matchMedia();
+      media.add("(prefers-reduced-motion: no-preference)", () => {
       const tl = gsap.timeline({ defaults: { ease: "power4.out", duration: 1.2 } });
 
       // Reset initial states for entrance
@@ -45,7 +52,7 @@ export default function Hero({
         stagger: 0.1,
       }, 0.2);
 
-      if (isHome) {
+      if (isHome && cardStackRef.current) {
         tl.to(".hero-card", {
           scale: 1,
           opacity: 1,
@@ -62,6 +69,8 @@ export default function Hero({
           ease: "sine.inOut",
         });
       }
+      });
+      return () => media.revert();
     },
     { scope: containerRef, dependencies: [isHome] }
   );
@@ -121,37 +130,37 @@ export default function Hero({
                 {primaryAction.label}
               </Button>
               <Button
-                href={secondaryAction.href}
+                href={resolvedSecondaryAction.href}
                 variant="secondary"
                 className="h-14 px-10 text-base"
                 analyticsLabel="Hero secondary CTA"
                 analyticsLocation="hero"
               >
-                {secondaryAction.label}
+                {resolvedSecondaryAction.label}
               </Button>
             </div>
             
-            {isHome && (
+            {isHome && projects.length > 0 && (
               <div className="hero-fade-up mt-16 border-t border-primary/5 pt-8">
                 <p className="text-xs font-bold uppercase tracking-widest text-primary/40">
                   Our work
                 </p>
                 <p className="mt-3 text-sm font-semibold text-primary/60">
-                  Real projects. Real structure. Built to make the next step obvious.
+                  Explore the project context and the work behind it.
                 </p>
               </div>
             )}
           </div>
 
           {/* Visual Column / Card Stack */}
-          {isHome && (
+          {isHome && projects.length > 0 && (
             <div className="relative flex items-center justify-center lg:justify-end">
               <div
                 ref={cardStackRef}
                 className="relative h-[280px] w-full max-w-[400px] lg:h-[420px] lg:max-w-none"
               >
                 {/* Stacked Glass Cards — real featured projects */}
-                {featuredProjects.slice(0, 3).map((project, i) => {
+                {projects.slice(0, 3).map((project, i) => {
                   const positions = [
                     "top-0 right-0 rotate-[3deg]",
                     "top-[40px] right-[20px] rotate-[-2deg] lg:top-[60px] lg:right-[30px]",
@@ -166,13 +175,13 @@ export default function Hero({
                       )}
                     >
                       <p className="mb-2 font-display text-[10px] font-bold uppercase tracking-widest text-accent lg:text-xs">
-                        {project.category}
+                        {project.client}
                       </p>
                       <p className="font-display text-lg font-extrabold text-primary lg:text-2xl">
-                        {project.label}
+                        {project.title}
                       </p>
                       <p className="mt-2 text-xs font-medium leading-relaxed text-primary/60 lg:text-sm">
-                        {project.result}
+                        {project.excerpt}
                       </p>
                     </div>
                   );

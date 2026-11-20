@@ -3,11 +3,18 @@
 @theme {
   /* Chromapages Redesign Tokens */
   --color-bg: #EFEFED;
-  --color-primary: #2C3892; /* Deep Indigo */
-  --color-accent: #23698C;  /* Teal Blue */
-  --color-ink: #0F172A;     /* Ink */
-
-  /* Semantic Surface Layering */
+  --color-surface: #EFEFED;
+  --color-surface-lowest: #FFFFFF;
+  --color-surface-container-low: #F5F5F3;
+  --color-surface-container: #EAEAE7;
+  --color-surface-container-high: #E2E2DF;
+  --color-primary: #2C3892;
+  --color-primary-container: #2C3892;
+  --color-accent: #23698C;
+  --color-ink: #0F1115;
+  --color-on-surface: #0F1115;
+  --color-on-primary: #FFFFFF;
+  --color-outline: #D9DADC;
   --color-surface-2: #E5E6F0;
   --color-surface-3: #DBDBEE;
 
@@ -19,8 +26,8 @@
   --text-section: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
   --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
   
-  --radius-structural: 1.5rem;
-  --radius-functional: 0.75rem;
+  --radius-structural: 1rem;
+  --radius-functional: 0.5rem;
 
   /* Shadows - Computed manually to avoid build issues */
   --shadow-soft: 0 4px 24px -2px rgba(44, 56, 146, 0.08);
@@ -36,7 +43,7 @@
 
   body {
     background-color: var(--color-bg);
-    color: var(--color-primary);
+    color: var(--color-ink);
     font-family: var(--font-body);
     line-height: 1.6;
   }

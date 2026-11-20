@@ -74,7 +74,7 @@ export default function MobileMenu({
   return (
     <div
       className={cn(
-        "fixed inset-0 z-50 bg-on-surface/25 backdrop-blur-sm transition duration-300 md:hidden",
+        "fixed inset-0 z-50 bg-on-surface/25 backdrop-blur-sm transition duration-300 lg:hidden",
         open ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0",
       )}
       aria-hidden={!open}
@@ -112,7 +112,7 @@ export default function MobileMenu({
         </div>
         <nav aria-label="Mobile navigation" className="mt-12">
           <ul className="space-y-4">
-            {links.slice(0, 4).map((link) => (
+            {links.filter((link) => link.href !== ctaHref).map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
@@ -128,6 +128,8 @@ export default function MobileMenu({
         <div className="mt-12">
           <Button
             href={ctaHref}
+            analyticsLabel={ctaLabel}
+            analyticsLocation="mobile-menu"
             onClick={() => onOpenChange(false)}
             className="w-full py-4 text-base"
           >

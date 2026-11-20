@@ -43,7 +43,7 @@ export default function Header({ items = staticNavigation }: HeaderProps) {
           </Link>
 
           <nav aria-label="Primary" className="hidden items-center gap-8 lg:flex">
-            {items.slice(0, 4).map((item) => {
+            {items.filter((item) => item.href !== "/contact").map((item) => {
               const active =
                 pathname === item.href || pathname.startsWith(`${item.href}/`);
 
@@ -76,7 +76,7 @@ export default function Header({ items = staticNavigation }: HeaderProps) {
 
           <button
             type="button"
-            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-functional bg-surface-container-low text-on-surface md:hidden"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-functional bg-surface-container-low text-on-surface lg:hidden"
             aria-label="Open menu"
             aria-expanded={open}
             aria-controls="mobile-menu"

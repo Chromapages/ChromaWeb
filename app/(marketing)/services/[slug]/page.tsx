@@ -27,8 +27,9 @@ export async function generateMetadata({ params }: ServicePageProps): Promise<Me
   if (!service) return { title: 'Service Not Found' }
 
   return {
-    title: `${service.title || service.label || 'Service'} | Chromapages`,
+    title: service.title || service.label || 'Service',
     description: service.summary,
+    alternates: { canonical: `/services/${slug}` },
   }
 }
 
@@ -41,17 +42,11 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
   return (
     <>
       <Hero
-        eyebrow="Service Detail"
+        eyebrow="Services"
         title={service.title || service.label || 'Service'}
         description={service.summary}
-        primaryAction={{
-          label: service.ctaText || 'Get Started',
-          href: service.ctaLink || '/contact',
-        }}
-        secondaryAction={{ label: 'Back to Services', href: '/services', variant: 'secondary' }}
-        panelLabel="Offer path"
-        panelTitle={service.price || 'Inquire for pricing'}
-        panelItems={service.features || ['Focused execution', 'Clear deliverables', 'Launch-ready QA']}
+        primaryAction={{ label: 'Send an inquiry', href: '/contact' }}
+        secondaryAction={{ label: 'Back to services', href: '/services', variant: 'secondary' }}
       />
 
       <section className="bg-surface py-20 lg:py-32">
@@ -59,32 +54,31 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
           <div className="grid gap-16 lg:grid-cols-3">
             {/* Main Content */}
             <div className="lg:col-span-2">
-              <SectionHeading eyebrow="Deep dive" title="Exactly what is included." className="mb-12" />
-              <RichText value={service.description || []} />
+              <SectionHeading eyebrow="The service" title="About this service." className="mb-12" />
+              {service.description?.length ? <RichText value={service.description} /> : <p className="text-body-lg text-on-surface/80">{service.body || service.summary}</p>}
             </div>
 
             {/* Sidebar / Features */}
             <aside className="space-y-10">
-              <div className="rounded-structural bg-surface-lowest p-8 shadow-ambient border border-outline/5 transition-all hover:shadow-elevated">
+              {Boolean(service.features?.length) && <div className="rounded-structural bg-surface-lowest p-8 shadow-ambient border border-outline/5 transition-all hover:shadow-elevated">
                 <h3 className="text-headline-xs font-display mb-6">Key Deliverables</h3>
                 <ul className="space-y-4">
-                  {(service.features || ['Design Audit', 'Development', 'QA']).map((feature: string) => (
+                  {service.features?.map((feature: string) => (
                     <li key={feature} className="flex items-start gap-3 text-body-md text-on-surface/80">
                       <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
                       {feature}
                     </li>
                   ))}
                 </ul>
-              </div>
+              </div>}
 
               <div className="rounded-structural bg-primary p-8 text-on-primary shadow-elevated transition-transform hover:-translate-y-1">
-                <h3 className="text-headline-xs font-display mb-4">Ready to move?</h3>
+                <h3 className="text-headline-xs font-display mb-4">Have a question about this service?</h3>
                 <p className="text-body-md mb-8 opacity-90 leading-relaxed">
-                  If this fits your current project needs, the best next step is a quick call to confirm
-                  the timeline and details.
+                  Tell us what needs to change and which service you are considering.
                 </p>
                 <Button href="/contact" variant="primary" className="w-full bg-white text-primary hover:bg-white/90 shadow-lg">
-                  Book A Call
+                  Send an inquiry
                 </Button>
               </div>
             </aside>
@@ -93,12 +87,10 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
       </section>
 
       <CtaBlock
-        title={`Still deciding if ${(service.title || 'the service').toLowerCase()} is the right fit?`}
-        description="We can help you compare our offer paths and decide which one provides the best ROI for your current stage."
-        primaryLabel="Compare services"
-        primaryHref="/services"
-        secondaryLabel="Contact us"
-        secondaryHref="/contact"
+        title="Is this the right service for your website?"
+        description="Start with the problem you want to solve."
+        primaryLabel="Send an inquiry"
+        primaryHref="/contact"
       />
     </>
   )

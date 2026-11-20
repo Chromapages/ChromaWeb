@@ -63,11 +63,11 @@ export type FooterGroup = {
 
 export const site = {
   name: "Chromapages",
-  tagline: "Digital design elevated.",
+  tagline: "Digital Design Elevated.",
   description:
-    "Chromapages builds modern websites and web apps that help businesses get more customers.",
+    "Chromapages designs and builds websites for service businesses ready for an online presence that reflects the quality of their work.",
   email: "hello@chromapages.com",
-  bookingLabel: "Book A Call",
+  bookingLabel: "Send an inquiry",
   bookingHref: "/contact",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://chromapages.com",
 };
@@ -105,14 +105,12 @@ export const footerGroups: FooterGroup[] = [
     title: "Contact",
     links: [
       { label: "Contact Form", href: "/contact" },
-      { label: "hello@chromapages.com", href: "mailto:hello@chromapages.com" },
     ],
   },
   {
     title: "Legal",
     links: [
       { label: "Privacy Policy", href: "/privacy-policy" },
-      { label: "Thank You", href: "/thank-you" },
     ],
   },
 ];
@@ -121,10 +119,8 @@ export const services: ServiceItem[] = [
   {
     slug: "marketing-websites",
     label: "Marketing Websites",
-    summary:
-      "A primary website built to clarify the offer, build trust fast, and move qualified visitors toward a call.",
-    body:
-      "We design and build premium marketing sites that do the sales work your current site is probably skipping. The focus is clarity, proof, mobile performance, and a clean path to contact.",
+    summary: "New websites and redesigns that explain your services and give visitors a clear way to get in touch.",
+    body: "New websites and redesigns that explain your services and give visitors a clear way to get in touch.",
     audience: [
       "Businesses that need a stronger first impression",
       "Teams that want more qualified discovery calls",
@@ -135,12 +131,7 @@ export const services: ServiceItem[] = [
       "Better mobile performance and faster load times",
       "A structure that supports SEO, referrals, and paid traffic",
     ],
-    includes: [
-      "Homepage strategy and copy direction",
-      "Service and proof page structure",
-      "Conversion-focused CTA paths",
-      "Launch QA and measurement setup",
-    ],
+    includes: [],
     faq: [
       {
         question: "How long does a marketing website project take?",
@@ -157,10 +148,8 @@ export const services: ServiceItem[] = [
   {
     slug: "landing-pages",
     label: "Landing Pages",
-    summary:
-      "Focused pages for a single campaign, offer, or audience segment, built to reduce distractions and increase action.",
-    body:
-      "Landing pages are the fastest way to give a campaign a better chance at conversion. We keep the page narrow, persuasive, and easy to scan so the visitor knows exactly what to do next.",
+    summary: "Focused pages for a campaign, promotion, or launch, built around one main action.",
+    body: "Focused pages for a campaign, promotion, or launch, built around one main action.",
     audience: [
       "Paid traffic campaigns",
       "Offer launches and lead magnets",
@@ -171,12 +160,7 @@ export const services: ServiceItem[] = [
       "Cleaner qualification for ad traffic",
       "A page that can stand on its own or slot into a broader funnel",
     ],
-    includes: [
-      "Offer framing and page hierarchy",
-      "CTA design and form routing",
-      "Optional FAQ and proof sections",
-      "Analytics-ready conversion paths",
-    ],
+    includes: [],
     faq: [
       {
         question: "Do landing pages need to match the main site?",
@@ -193,10 +177,8 @@ export const services: ServiceItem[] = [
   {
     slug: "ecommerce",
     label: "E-Commerce",
-    summary:
-      "Small-batch ecommerce experiences that make buying simple and keep the brand feel polished.",
-    body:
-      "For products that need a clear buying experience, we build storefronts that feel trustworthy, organized, and easy to use on mobile.",
+    summary: "Storefronts, product pages, and checkout experiences for businesses selling online.",
+    body: "Storefronts, product pages, and checkout experiences for businesses selling online.",
     audience: [
       "Boutique product brands",
       "Small catalogs with a focused product line",
@@ -207,12 +189,7 @@ export const services: ServiceItem[] = [
       "More confidence at the product page level",
       "A store that can grow without feeling messy",
     ],
-    includes: [
-      "Catalog and product page structure",
-      "Mobile-first purchase flow",
-      "Brand-led merchandising support",
-      "Launch QA and conversion review",
-    ],
+    includes: [],
     faq: [
       {
         question: "Do you rebuild the full store?",
@@ -224,10 +201,8 @@ export const services: ServiceItem[] = [
   {
     slug: "web-apps",
     label: "Web Apps",
-    summary:
-      "Lightweight product experiences, MVPs, and internal tools that need clear UX and clean execution.",
-    body:
-      "When a project needs to feel more like a product than a brochure, we focus on interface clarity, system thinking, and a launch path that keeps the scope manageable.",
+    summary: "Portals, dashboards, and tools for a specific business or customer task.",
+    body: "Portals, dashboards, and tools for a specific business or customer task.",
     audience: [
       "Founders building MVPs",
       "Teams replacing manual workflows",
@@ -238,12 +213,7 @@ export const services: ServiceItem[] = [
       "Better handling of key workflows",
       "Cleaner handoff between design and development",
     ],
-    includes: [
-      "Information architecture and UX flow",
-      "Responsive component implementation",
-      "Testing and launch support",
-      "Future-ready structure for iteration",
-    ],
+    includes: [],
     faq: [
       {
         question: "Do you handle product strategy too?",
@@ -255,10 +225,8 @@ export const services: ServiceItem[] = [
   {
     slug: "ongoing-support",
     label: "Ongoing Support",
-    summary:
-      "Post-launch design, content, and development support for teams that want a reliable partner after launch.",
-    body:
-      "A site should not go stale right after launch. We support ongoing improvements, landing pages, performance tweaks, and content updates so the site keeps earning its place.",
+    summary: "Website updates, fixes, and improvements after launch.",
+    body: "Website updates, fixes, and improvements after launch.",
     audience: [
       "Teams that need a dependable web partner",
       "Businesses planning frequent updates",
@@ -269,12 +237,7 @@ export const services: ServiceItem[] = [
       "More confidence in future updates",
       "Ongoing conversion and UX improvements",
     ],
-    includes: [
-      "Content updates and refinements",
-      "New landing pages or campaign assets",
-      "Quality assurance and maintenance",
-      "Support for new priorities as they come up",
-    ],
+    includes: [],
     faq: [
       {
         question: "Is support on retainer?",
@@ -349,74 +312,21 @@ export const featuredProjects: ProjectItem[] = [
 ];
 
 export const processSteps: ProcessStep[] = [
-  {
-    title: "Discover",
-    summary:
-      "We align on goals, audience, offer, and what the site actually needs to do.",
-  },
-  {
-    title: "Define",
-    summary:
-      "We shape the page structure, key messages, and the conversion path before anything is designed.",
-  },
-  {
-    title: "Design",
-    summary:
-      "We create a premium visual direction that feels deliberate, clear, and easy to trust.",
-  },
-  {
-    title: "Build",
-    summary:
-      "We implement the site with mobile performance, accessibility, and maintainability in mind.",
-  },
-  {
-    title: "QA",
-    summary:
-      "We review content, interactions, responsive behavior, and launch readiness before the site goes live.",
-  },
-  {
-    title: "Launch",
-    summary:
-      "We deploy, verify the live experience, and make sure the conversion path works end to end.",
-  },
-  {
-    title: "Support",
-    summary:
-      "We stay available for updates, refinements, and future pages once the site is live.",
-  },
+  { title: "Purpose", summary: "What should your website help visitors understand or do?" },
+  { title: "Scope", summary: "Which pages, features, or problems need attention?" },
+  { title: "Content", summary: "What copy, images, and other materials are ready to use?" },
+  { title: "Feedback", summary: "Who will provide feedback and make decisions for your business?" },
+  { title: "Review", summary: "How will the work be reviewed before it goes live?" },
+  { title: "Launch", summary: "What needs to be ready for the website to go live?" },
+  { title: "After launch", summary: "What updates or support will you need after launch?" },
 ];
 
 export const differentiators: Differentiator[] = [
-  {
-    title: "Built to convert",
-    summary:
-      "Every page is structured around action, not just aesthetics.",
-  },
-  {
-    title: "Fast on mobile",
-    summary:
-      "The experience is designed to feel sharp and easy to use on smaller screens first.",
-  },
-  {
-    title: "Clear process",
-    summary:
-      "Clients know what happens next, what we need, and what good looks like.",
-  },
-  {
-    title: "Launch-ready QA",
-    summary:
-      "We pay attention to the details that keep a launch from feeling rushed.",
-  },
-  {
-    title: "Tracking and measurement",
-    summary:
-      "The site is built to support analytics and future optimization from the start.",
-  },
-  {
-    title: "Support after launch",
-    summary:
-      "The relationship does not have to stop once the site goes live.",
-  },
+  { title: "Look Premium", summary: "Represent the quality of the business." },
+  { title: "Convert Clearly", summary: "Make the offer and the next step clear." },
+  { title: "Load Fast", summary: "Treat loading speed as part of the experience." },
+  { title: "Launch Clean", summary: "Treat quality checks and launch readiness as part of the work." },
+  { title: "Keep Improving", summary: "Consider what the website needs as the business changes." },
 ];
 
 export const pricingOffers: PricingOffer[] = [

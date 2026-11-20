@@ -3,8 +3,8 @@ import Hero from "@/components/sections/hero";
 import CtaBlock from "@/components/sections/cta-block";
 
 export const metadata: Metadata = {
-  title: "Thank You",
-  description: "Your inquiry was received. Here is what happens next.",
+  title: "Inquiry confirmation information",
+  description: "Find out where the contact form displays an inquiry confirmation, or open the form to send a request.",
   robots: {
     index: false,
     follow: false,
@@ -15,25 +15,17 @@ export default function ThankYouPage() {
   return (
     <>
       <Hero
-        eyebrow="Thank you"
-        title="Your inquiry is in."
-        description="We will review the details and follow up with the next step. If the project is a good fit, we will make the path forward simple."
-        primaryAction={{ label: "Back to Home", href: "/" }}
-        secondaryAction={{ label: "View Work", href: "/work", variant: "secondary" }}
-        panelLabel="What happens next"
-        panelTitle="A quick review, then a thoughtful response."
-        panelItems={[
-          "We review the project details",
-          "We confirm fit and next steps",
-          "We decide whether a call or email reply is best",
-        ]}
+        eyebrow="Your inquiry"
+        title="Looking for your inquiry confirmation?"
+        description="Successful submissions show a confirmation and a reference number in the contact form. If you still need to send an inquiry, open the form below."
+        primaryAction={{ label: "Return home", href: "/" }}
+        secondaryAction={{ label: "Open inquiry form", href: "/contact", variant: "secondary" }}
       />
       <CtaBlock
-        title="If you still want to see more, the work page is a good next stop."
-        primaryLabel="View Work"
-        primaryHref="/work"
-        secondaryLabel="Contact again"
-        secondaryHref="/contact"
+        title="Still need to send an inquiry?"
+        description="Use the contact form to tell us about your business and what needs to change on your website."
+        primaryLabel="Open inquiry form"
+        primaryHref="/contact"
       />
     </>
   );

@@ -28,8 +28,9 @@ export async function generateMetadata({ params }: CaseStudyPageProps): Promise<
   if (!project) return { title: 'Project Not Found' }
 
   return {
-    title: `${project.title} | Case Study`,
-    description: project.excerpt || `Case study for ${project.client}`,
+    title: project.title || project.label || 'Project',
+    description: project.excerpt,
+    alternates: { canonical: `/work/${slug}` },
   }
 }
 
@@ -38,18 +39,19 @@ export default async function CaseStudyDetailPage({ params }: CaseStudyPageProps
   const project = await getCaseStudyBySlug(slug)
 
   if (!project) notFound()
+  const results = (Array.isArray(project.results) ? project.results : project.results ? [project.results] : [])
+    .filter((result) => result.trim())
+  const isConcept = project.excerpt?.startsWith('Internal concept.') || !project.client
+  const classification = isConcept ? 'Internal concept' : 'Client project'
 
   return (
     <>
       <Hero
-        eyebrow="Case Study"
+        eyebrow={classification}
         title={project.title || project.label || 'Case Study'}
-        description={project.excerpt || project.summary || `A breakdown of the work done for ${project.client || 'our client'} and the impact it had on their digital presence.`}
-        primaryAction={{ label: 'Start Your Project', href: '/contact' }}
-        secondaryAction={{ label: 'View All Work', href: '/work', variant: 'secondary' }}
-        panelLabel="Project focus"
-        panelTitle={project.client || 'Client project'}
-        panelItems={project.tags || ['Web Design', 'Next.js', 'Sanity CMS']}
+        description={project.excerpt}
+        primaryAction={{ label: 'Send an inquiry', href: '/contact' }}
+        secondaryAction={{ label: 'View all work', href: '/work', variant: 'secondary' }}
       />
 
       {project.mainImage && (
@@ -60,6 +62,7 @@ export default async function CaseStudyDetailPage({ params }: CaseStudyPageProps
                 src={urlFor(project.mainImage).url()}
                 alt={project.title || project.label || 'Project Image'}
                 fill
+                sizes="(min-width: 1280px) 1216px, (min-width: 768px) calc(100vw - 64px), calc(100vw - 48px)"
                 className="object-cover"
                 priority
               />
@@ -73,16 +76,16 @@ export default async function CaseStudyDetailPage({ params }: CaseStudyPageProps
           <div className="grid gap-16 lg:grid-cols-3">
             {/* Main Content */}
             <div className="lg:col-span-2">
-              <SectionHeading eyebrow="The work" title="Strategy and implementation." className="mb-12" />
+              <SectionHeading eyebrow="The work" title="Project context and decisions." className="mb-12" />
               <RichText value={project.content || []} />
             </div>
 
             {/* Results Sidebar */}
             <aside className="space-y-10">
-              <div className="rounded-structural bg-surface-lowest p-8 shadow-ambient border border-outline/5 transition-all hover:shadow-elevated">
-                <SectionHeading eyebrow="Impact" title="Results" className="mb-6" />
+              {results.length > 0 && <div className="rounded-structural bg-surface-lowest p-8 shadow-ambient border border-outline/5 transition-all hover:shadow-elevated">
+                <SectionHeading eyebrow="Evidence" title="Documented results" className="mb-6" />
                 <ul className="space-y-6">
-                  {(Array.isArray(project.results) ? project.results : project.results ? [project.results] : ['Improved load times', 'Better conversion', 'Clean handoff']).map(
+                  {results.map(
                     (result: string) => (
                       <li key={result} className="group">
                         <div className="flex items-start gap-4">
@@ -95,14 +98,14 @@ export default async function CaseStudyDetailPage({ params }: CaseStudyPageProps
                     )
                   )}
                 </ul>
-              </div>
+              </div>}
 
-              <div className="rounded-structural bg-surface-container-high p-8 shadow-ambient border border-outline/10">
+              {Boolean(project.tags?.length) && <div className="rounded-structural bg-surface-container-high p-8 shadow-ambient border border-outline/10">
                 <h4 className="text-label-lg uppercase tracking-widest text-on-surface/50 mb-4">
-                  Tech Stack
+                  Tags
                 </h4>
                 <div className="flex flex-wrap gap-2">
-                  {(project.tags || ['Next.js', 'Tailwind', 'GSAP']).map((tag: string) => (
+                  {project.tags?.map((tag: string) => (
                     <span
                       key={tag}
                       className="px-3 py-1 rounded-full bg-surface-lowest text-label-md font-medium border border-outline/10 shadow-sm"
@@ -111,19 +114,17 @@ export default async function CaseStudyDetailPage({ params }: CaseStudyPageProps
                     </span>
                   ))}
                 </div>
-              </div>
+              </div>}
             </aside>
           </div>
         </div>
       </section>
 
       <CtaBlock
-        title="Ready to see these kinds of results for your business?"
-        description="We can help you identify the biggest opportunities for improvement on your current site and map out a plan for the next version."
-        primaryLabel="Book A Call"
+        title="What needs to change on your website?"
+        description="Tell us what your business needs from its website."
+        primaryLabel="Send an inquiry"
         primaryHref="/contact"
-        secondaryLabel="See all work"
-        secondaryHref="/work"
       />
     </>
   )

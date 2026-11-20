@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <title>Contact — Precision Chroma design proposal</title>
+  <link rel="stylesheet" href="study.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+  <aside class="review-banner" aria-label="Design proposal context">
+    <div class="container">
+      <p><strong>SPECIFYING · Contact proposal · 2026-10-24.</strong> Editable layout preview and separate state plates. No form data is sent. Proposed copy is not publication approval.</p>
+      <p><a href="home-study.html">Homepage design</a><a href="README.md">Design specification and sources</a><a href="#states">Form states</a><a href="#annotations">Layout notes</a></p>
+      <p>Request choices change preview labels; the preview action does not submit. Route links point to current application destinations. No browser capture or visual verdict is claimed.</p>
+    </div>
+  </aside>
+  <header class="site-header">
+    <div class="container header-row">
+      <a class="wordmark" href="/" aria-label="Chromapages home"><span>Chroma</span>pages</a>
+      <nav class="desktop-nav" aria-label="Primary navigation"><a href="/services">Services</a><a href="/work">Work</a><a href="/process">Process</a><a href="/pricing">Pricing</a></nav>
+      <a class="desktop-cta text-action" href="#inquiry">Inquiry form</a>
+      <details class="mobile-nav">
+        <summary>Menu</summary>
+        <nav aria-label="Mobile navigation"><a href="/services">Services</a><a href="/work">Work</a><a href="/process">Process</a><a href="/pricing">Pricing</a><a href="/contact" aria-current="page">Contact</a></nav>
+      </details>
+    </div>
+  </header>
+
+  <main id="main" class="section">
+    <div class="container">
+      <div class="contact-heading">
+        <p class="eyebrow">Contact</p>
+        <h1>A short message is enough to start.</h1>
+        <p class="intro">Tell us what your business does, where your website falls short, and what you want visitors to do.</p>
+      </div>
+      <div class="grid contact-grid">
+        <section id="inquiry" class="form-column form-surface request-preview" aria-labelledby="form-heading">
+          <p class="eyebrow">Send an inquiry</p>
+          <h2 id="form-heading" class="form-title">Tell us what needs to change.</h2>
+          <p class="form-intro">Share your current website address, if you have one. A few sentences about the problem will help.</p>
+
+          <fieldset class="request-selector">
+            <legend>Request type</legend>
+            <label><input id="type-prospect" type="radio" name="requestType" value="prospect" checked><span>Project inquiry</span></label>
+            <label><input id="type-client" type="radio" name="requestType" value="client"><span>Client support</span></label>
+            <label><input id="type-question" type="radio" name="requestType" value="question"><span>Question</span></label>
+          </fieldset>
+
+          <div class="fields">
+            <div class="field half"><label for="name">Your name <span class="optional">(required)</span></label><input id="name" type="text" autocomplete="name" minlength="2" required></div>
+            <div class="field half"><label for="email">Email address <span class="optional">(required)</span></label><input id="email" type="email" autocomplete="email" required></div>
+            <div class="field"><label for="company">Business name <span class="optional">(optional)</span></label><input id="company" type="text" autocomplete="organization" maxlength="120"></div>
+            <div class="field">
+              <label for="message"><span class="for-prospect">What needs to change?</span><span class="for-client">Support request</span><span class="for-question">Your question</span> <span class="optional">(required)</span></label>
+              <textarea id="message" rows="6" minlength="10" required aria-describedby="message-note"></textarea>
+              <p id="message-note" class="helper"><span class="for-prospect">Tell us about your business, your current website, and what you would like it to do better.</span><span class="for-client">Describe the issue or update and include the page address, if relevant. Do not include passwords or payment details.</span><span class="for-question">What would you like to know?</span></p>
+            </div>
+          </div>
+          <p class="helper">Before sending, read the <a href="/privacy-policy">Privacy policy</a>.</p>
+          <button class="button" type="button" aria-describedby="preview-only"><span class="for-prospect">Send inquiry</span><span class="for-client">Send support request</span><span class="for-question">Send question</span></button>
+          <p id="preview-only" class="helper">Design preview only. This button sends no request.</p>
+        </section>
+
+        <aside class="contact-aside" aria-labelledby="include-heading">
+          <h2 id="include-heading">What to include</h2>
+          <ul>
+            <li>What your business does</li>
+            <li>What is not working on your website</li>
+            <li>Any deadline or budget context you want to share</li>
+          </ul>
+          <p class="eyebrow advice-heading">Prefer email?</p>
+          <p><a href="mailto:hello@chromapages.com">Email Chromapages</a></p>
+        </aside>
+      </div>
+    </div>
+  </main>
+  <footer class="footer dark-anchor">
+    <div class="container footer-row"><p>Chromapages</p><nav class="footer-links" aria-label="Footer"><a href="/about">About</a><a href="mailto:hello@chromapages.com">Email Chromapages</a><a href="/privacy-policy">Privacy policy</a></nav></div>
+  </footer>
+
+  <aside id="states" class="review-notes" aria-label="Authored form state plates">
+    <div class="container">
+      <article>
+        <p class="eyebrow">Internal state plates · not actual submission results</p>
+        <h2>Receipt must be clear. Failure must preserve the work.</h2>
+        <p>Each plate is a separate authored state. The live application still needs keyboard, assistive-technology and endpoint verification. Main preview fields demonstrate the ready/empty state; request-type radios preserve the existing three enum values.</p>
+        <nav class="state-index" aria-label="State plate navigation"><a href="#inquiry">Ready</a><a href="#state-validation">Validation</a><a href="#state-loading">Sending</a><a href="#state-error">Unconfirmed</a><a href="#state-success">Accepted</a></nav>
+      </article>
+
+      <section id="state-validation" class="plate" aria-labelledby="validation-heading">
+        <p class="eyebrow">Validation · authored example</p>
+        <div class="error-summary" tabindex="-1">
+          <h3 id="validation-heading">Check the email address</h3>
+          <a href="#invalid-email">Please enter a valid email address.</a>
+        </div>
+        <div class="field">
+          <label for="invalid-email">Email address <span class="optional">(required)</span></label>
+          <input id="invalid-email" type="email" value="name@" aria-invalid="true" aria-describedby="email-error">
+          <p id="email-error" class="helper error">Please enter a valid email address.</p>
+        </div>
+        <p class="helper">Production behavior: focus the summary on invalid submission; its link focuses the field. Keep all entered values and revalidate failed fields when edited. No error is shown before initial submission.</p>
+      </section>
+
+      <section id="state-loading" class="plate" aria-labelledby="loading-heading">
+        <p class="eyebrow">Loading · authored example</p>
+        <h3 id="loading-heading">Sending…</h3>
+        <p class="helper">Freeze the submitted fields and request type. Announce busy status. The pending action stays focusable, has aria-disabled=true and guards repeat activation. No spinner or animation is needed to understand the state.</p>
+        <button class="button pending" type="button" aria-disabled="true">Sending…</button>
+      </section>
+
+      <section id="state-error" class="plate" aria-labelledby="error-heading">
+        <p class="eyebrow">Error or uncertain receipt · authored example</p>
+        <h3 id="error-heading" class="error">We couldn’t confirm receipt.</h3>
+        <p>Your entries are still in this form. Please try again later.</p>
+        <a class="text-action" href="#inquiry">Return to the inquiry</a>
+        <p><a href="mailto:hello@chromapages.com">Email Chromapages</a></p>
+        <p class="helper">For invalid payload, HTTP failure, offline, timeout or malformed acceptance: show persistent, buyer-facing feedback; retain and unfreeze values; never automatically retry or imply durable storage. Deliberate retry uses the retained form. Do not announce a definite failure if the remote outcome is uncertain.</p>
+      </section>
+
+      <section id="state-success" class="plate" aria-labelledby="success-heading">
+        <p class="eyebrow">Accepted · authored example</p>
+        <h3 id="success-heading" class="success" tabindex="-1">Your request was received.</h3>
+        <p class="helper">Production receipt shows the actual returned reference only after success:true and a nonempty issueIdentifier validate. No reference is invented in this plate. Focus the receipt heading and announce once; clear only the accepted submission.</p>
+        <a class="text-action" href="#inquiry">Return to the preview</a>
+        <p class="helper">Production action label: “Send another request”; it explicitly resets to prospect and restores first-choice focus. The study link only returns to the preview. No response-time, email follow-up or meeting promise is added while contact operations are Unknown.</p>
+      </section>
+    </div>
+  </aside>
+
+  <aside id="annotations" class="review-notes" aria-label="Contact design notes">
+    <div class="container">
+      <article>
+        <p class="eyebrow">Layout notes · outside page composition</p>
+        <h2>Form first, clear labels, honest states.</h2>
+        <h3>C1 · Purpose and hierarchy</h3>
+        <p>The short heading and proposed task copy come from copy-review §5. Desktop: form in the first eight-column zone, max640px, advice in the final four. Below1024: form then advice. DOM and visual reading order match. There is no self-linking “Book A Call” hero action.</p>
+        <h3>C2 · Native request choice</h3>
+        <p>The radios use native fieldset/legend, checked and keyboard behavior. CSS switches only the visible message/action text; common entries are retained. No custom tab roles, roving-focus script or new service value. Full production submission remains the current RequestForm/API responsibility.</p>
+        <h3>C3 · Unknown optional choices</h3>
+        <p>Project-type and budget options are unapproved sources, so this proposal omits those optional controls. They may be restored prospect-only using approved existing options and blank initial values. No new mandatory field, numerical range or Rescue Sprint definition is invented. Name/email/message requirements match the current schema.</p>
+        <h3>C4 · State and focus contract</h3>
+        <p>Use the shared error/success colors from core §3.6 and persistent field labels from §14.5. Submit is solid Teal with8px radius per §8. Validation summary links, receipt focus, frozen pending inputs and explicit reset are specified in the README. The preview contains no submission script and makes no backend claim.</p>
+        <h3>C5 · Responsive and motion behavior</h3>
+        <p>Core §§4–7 govern typography,20/32/48/80 outer margins,24px field gaps,8px controls and12px panel. At narrow widths every field/action spans the available column;16px input text and6-row textarea remain readable. No animation is needed; reduced-motion removes hover transitions. Verify320px/zoom/keyboard layouts when capture becomes available.</p>
+        <h3>Source and visual status</h3>
+        <p>Charter, exact offer terms, monitored email/follow-up, final CTA wording and full motion systems remain Unknown. Copy here is proposed, not a new operational guarantee. No browser surfaces were available; no screenshot, rendered finding or visual verdict is asserted.</p>
+      </article>
+    </div>
+  </aside>
+</body>
+</html>

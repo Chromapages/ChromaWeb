@@ -57,23 +57,29 @@ export default function Button(props: LinkButtonProps | NativeButtonProps) {
     analyticsLocation,
     className,
     children,
+    onClick,
     ...rest
   } = props;
   const anchorProps = rest as AnchorHTMLAttributes<HTMLAnchorElement>;
   const nativeButtonProps = rest as ButtonHTMLAttributes<HTMLButtonElement>;
 
-  const handleClick = () => {
-    if (!analyticsLabel) {
-      return;
+  const handleClick = (event: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
+    if (analyticsLabel) {
+      trackCTAClick({
+        label: analyticsLabel,
+        location: analyticsLocation,
+        destination: "href" in props ? props.href : undefined,
+        pagePath: pathname,
+        pageType: pathname === "/" ? "home" : "marketing",
+      });
     }
-
-    trackCTAClick({
-      label: analyticsLabel,
-      location: analyticsLocation,
-      destination: "href" in props ? props.href : undefined,
-      pagePath: pathname,
-      pageType: pathname === "/" ? "home" : "marketing",
-    });
+    if ("href" in props && props.href) {
+      props.onClick?.(event as React.MouseEvent<HTMLAnchorElement>);
+    } else {
+      (onClick as ButtonHTMLAttributes<HTMLButtonElement>["onClick"])?.(
+        event as React.MouseEvent<HTMLButtonElement>,
+      );
+    }
   };
 
   const classes = cn(buttonClasses(variant), className);

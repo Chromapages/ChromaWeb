@@ -3,62 +3,53 @@ import Hero from "@/components/sections/hero";
 import PricingSnapshot from "@/components/sections/pricing-snapshot";
 import FAQAccordion from "@/components/sections/faq-accordion";
 import CtaBlock from "@/components/sections/cta-block";
-import { getPricingServices } from "@/lib/sanity/fetch";
 
 const pricingFaq = [
   {
-    question: "Do you publish fixed pricing for every project?",
+    question: "What should I include in a pricing inquiry?",
     answer:
-      "The page is meant to show the typical engagement types and the kind of fit each one serves. Final scope and investment depend on the specific project.",
+      "Tell us what you need to change, share your website address if you have one, and include any budget or deadline you are working with.",
   },
   {
-    question: "What if we only need one page?",
+    question: "Do I need to choose a service before contacting you?",
     answer:
-      "That is exactly what the landing page path is for. If the project is narrow, we keep the scope narrow.",
+      "You can send an inquiry without choosing a service. Describe the problem you want to solve.",
   },
   {
-    question: "Can pricing be updated later?",
+    question: "How do I send a pricing question?",
     answer:
-      "Yes. The offer blocks are structured so they can evolve without forcing a redesign of the page.",
+      "Use the inquiry form on the contact page. You can select Question if you do not have a project brief to submit.",
   },
 ];
 
 export const metadata: Metadata = {
-  title: "Pricing",
+  title: "Website pricing inquiries",
   description:
-    "Explore the types of Chromapages engagements and the kind of fit each one is designed for.",
+    "Send Chromapages your questions about website scope and pricing. Share what needs to change and any budget or deadline context.",
+  alternates: { canonical: "/pricing" },
 };
 
 export default async function PricingPage() {
-  const pricingServices = await getPricingServices();
-
   return (
     <>
       <Hero
         eyebrow="Pricing"
-        title="Transparent enough to be useful, flexible enough to fit the project."
-        description="The pricing page is designed to help visitors understand the engagement shape before they reach out, so the conversation starts with better context."
-        primaryAction={{ label: "Book A Call", href: "/contact" }}
-        secondaryAction={{ label: "View Services", href: "/services", variant: "secondary" }}
-        panelLabel="How to read this"
-        panelTitle="Think in terms of fit, scope, and the next best step."
-        panelItems={[
-          "Full website projects",
-          "Fast landing page engagements",
-          "Support after launch",
-        ]}
+        title="Start with the scope of your website."
+        description="Tell us what needs to change and include any questions about scope or pricing in your inquiry."
+        primaryAction={{ label: "Send an inquiry", href: "/contact" }}
+        secondaryAction={{ label: "View services", href: "/services", variant: "secondary" }}
       />
-      <PricingSnapshot offers={pricingServices} />
+      <PricingSnapshot offers={[]} />
       <FAQAccordion
         items={pricingFaq}
-        eyebrow="Pricing FAQ"
-        title="A few common pricing questions."
-        description="These answers are meant to reduce confusion before the first call."
+        eyebrow="Before you inquire"
+        title="A few useful starting points."
+        description="Start with your website and the problem you want to solve."
       />
       <CtaBlock
-        title="If you want the scope to be right, not just fast, let’s talk."
-        description="We can help decide which engagement type fits the project and what it should include."
-        primaryLabel="Book A Call"
+        title="Have a question about scope or pricing?"
+        description="Share your website address, what needs to change, and any budget or deadline you are working with."
+        primaryLabel="Send an inquiry"
         primaryHref="/contact"
       />
     </>

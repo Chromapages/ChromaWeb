@@ -6,9 +6,9 @@ export default function Differentiators() {
     <section className="bg-surface">
       <div className="mx-auto max-w-7xl px-6 py-16 md:px-8 md:py-24">
         <SectionHeading
-          eyebrow="Why Chromapages"
-          title="The site is designed to sell the work, not just describe it."
-          description="These are the habits that separate a convincing marketing site from a page full of generic claims."
+          eyebrow="Our standard"
+          title="What we want every website to do."
+          description="Look Premium, Convert Clearly, Load Fast, Launch Clean, Keep Improving."
         />
         <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {differentiators.map((item, index) => (

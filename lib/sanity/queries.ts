@@ -38,7 +38,12 @@ export const serviceBySlugQuery = groq`*[_type == "service" && slug.current == $
   ctaLink
 }`
 
-export const caseStudiesQuery = groq`*[_type == "caseStudy"] | order(publishedAt desc){
+// Approval covers the narrative and any optional results; never publish placeholder proof.
+const approvedCaseStudy = groq`_type == "caseStudy" && proofStatus == "approved"
+  && length(slug.current) > 0 && length(title) > 0 && length(excerpt) > 0
+  && length(pt::text(content)) > 0`
+
+export const caseStudiesQuery = groq`*[${approvedCaseStudy}] | order(publishedAt desc){
   title,
   "slug": slug.current,
   client,
@@ -47,8 +52,10 @@ export const caseStudiesQuery = groq`*[_type == "caseStudy"] | order(publishedAt
   tags
 }`
 
-export const projectBySlugQuery = groq`*[_type == "caseStudy" && slug.current == $slug][0]{
+export const projectBySlugQuery = groq`*[${approvedCaseStudy} && slug.current == $slug][0]{
   title,
+  "slug": slug.current,
+  excerpt,
   client,
   mainImage,
   content,

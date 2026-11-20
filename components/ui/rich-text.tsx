@@ -29,10 +29,12 @@ const components: PortableTextComponents = {
   marks: {
     strong: ({ children }) => <strong className="font-bold text-on-surface">{children}</strong>,
     link: ({ children, value }) => {
-      const rel = !value.href.startsWith('/') ? 'noreferrer noopener' : undefined
+      const href = typeof value?.href === 'string' ? value.href.trim() : ''
+      if (!/^(https?:\/\/|mailto:|tel:|\/(?!\/)|#)/i.test(href)) return <>{children}</>
+      const rel = !href.startsWith('/') ? 'noreferrer noopener' : undefined
       return (
         <a
-          href={value.href}
+          href={href}
           rel={rel}
           className="text-primary underline underline-offset-4 hover:text-primary-hover transition-colors font-medium"
         >

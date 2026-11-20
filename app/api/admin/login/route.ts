@@ -10,10 +10,9 @@ export const POST = async (request: Request) => {
 
   // Fail-closed: refuse to authenticate if the server-side secret is unset.
   if (!expectedPassword) {
-    console.error("ADMIN_PASSWORD env var is not set.");
     return NextResponse.json(
-      { success: false, message: "Admin portal is misconfigured. Set ADMIN_PASSWORD env var." },
-      { status: 500 }
+      { success: false, message: "Admin login is temporarily unavailable." },
+      { status: 503 }
     );
   }
 
@@ -39,7 +38,15 @@ export const POST = async (request: Request) => {
   }
 
   // Issue a fresh opaque session token and store it server-side.
-  const token = createSessionToken();
+  let token: string;
+  try {
+    token = await createSessionToken();
+  } catch {
+    return NextResponse.json(
+      { success: false, message: "Admin login is temporarily unavailable." },
+      { status: 503 }
+    );
+  }
 
   const response = NextResponse.json({ success: true, message: "Logged in successfully." });
 

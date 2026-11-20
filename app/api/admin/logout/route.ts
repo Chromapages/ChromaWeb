@@ -5,7 +5,14 @@ import { revokeSessionToken, SESSION_COOKIE } from "@/lib/admin-session";
 export const POST = async () => {
   const cookieStore = await cookies();
   const session = cookieStore.get(SESSION_COOKIE);
-  revokeSessionToken(session?.value);
+  try {
+    await revokeSessionToken(session?.value);
+  } catch {
+    return NextResponse.json(
+      { success: false, message: "Logout could not be confirmed. Please try again." },
+      { status: 503 }
+    );
+  }
 
   const response = NextResponse.json({ success: true, message: "Logged out successfully." });
 

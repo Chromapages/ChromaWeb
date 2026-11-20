@@ -1,20 +1,17 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { requestSchema } from "@/lib/validation/request";
 
-const intakeSchema = z.object({
-  name: z.string().trim().min(2, "Please enter your name."),
-  email: z.string().trim().email("Please enter a valid email."),
-  company: z.string().trim().max(120).optional().or(z.literal("")),
-  requestType: z.enum(["prospect", "client", "question"]),
-  projectType: z.string().optional().or(z.literal("")),
-  budgetRange: z.string().optional().or(z.literal("")),
-  message: z.string().trim().min(10, "Please add a brief message."),
-  honeypot: z.string().optional().or(z.literal("")),
+const workerAcceptanceSchema = z.object({
+  ok: z.literal(true),
+  issueId: z.string().trim().min(1),
+  issueIdentifier: z.string().trim().min(1),
+  issueUrl: z.string().url(),
 });
 
 export const POST = async (request: Request) => {
   const payload = await request.json().catch(() => null);
-  const parsed = intakeSchema.safeParse(payload);
+  const parsed = requestSchema.safeParse(payload);
 
   if (!parsed.success) {
     return NextResponse.json(
@@ -40,26 +37,24 @@ export const POST = async (request: Request) => {
   const workerUrl = process.env.WORKER_URL;
   const pathSecret = process.env.PATH_SECRET;
 
-  if (!workerUrl || !pathSecret) {
-    console.error("Intake Worker environment variables are not configured.");
+  let targetUrl: URL;
+  try {
+    if (!workerUrl || !pathSecret) throw new Error("Missing configuration");
+    targetUrl = new URL(`${workerUrl.replace(/\/$/, "")}/${encodeURIComponent(pathSecret)}`);
+    if (targetUrl.protocol !== "https:" || targetUrl.username || targetUrl.password || targetUrl.search || targetUrl.hash) {
+      throw new Error("Invalid configuration");
+    }
+  } catch {
     return NextResponse.json(
       {
         success: false,
         message: "Server configuration error. Please try again later.",
       },
-      { status: 500 },
+      { status: 503 },
     );
   }
 
-  // Build the intake worker URL: workerUrl/pathSecret
-  const targetUrl = `${workerUrl.replace(/\/$/, "")}/${pathSecret}`;
-
-  // Build the payload for the Cloudflare Worker. We structure it so it passes
-  // through the worker's normalization seamlessly. requestType is forwarded so
-  // the local cmd/intake dispatcher can route by intent (prospect/client/question).
-  // We also include "cmd/intake" in the labels array so the dispatcher picks
-  // the issue up on its next tick even when DEFAULT_LABELS isn't set on the
-  // Worker side.
+  // The Worker owner must configure routing; source version 0.1.0 ignores payload labels.
   const workerPayload = {
     formId: "chromaweb-portal",
     formName: "ChromaWeb Request Portal",
@@ -83,11 +78,11 @@ export const POST = async (request: Request) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify(workerPayload),
+      signal: AbortSignal.timeout(10_000),
+      redirect: "error",
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Intake Worker returned error status ${response.status}:`, errorText);
       return NextResponse.json(
         {
           success: false,
@@ -97,21 +92,26 @@ export const POST = async (request: Request) => {
       );
     }
 
-    const data = await response.json();
+    const accepted = workerAcceptanceSchema.safeParse(await response.json().catch(() => null));
+    if (!accepted.success) {
+      return NextResponse.json(
+        { success: false, message: "The intake service did not confirm acceptance. Please try again later." },
+        { status: 502 },
+      );
+    }
     return NextResponse.json({
       success: true,
       message: "Request received successfully.",
-      issueIdentifier: data.issueIdentifier,
-      issueUrl: data.issueUrl,
+      issueIdentifier: accepted.data.issueIdentifier,
     });
   } catch (error) {
-    console.error("Error forwarding request to Intake Worker:", error);
+    const timedOut = error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
     return NextResponse.json(
       {
         success: false,
-        message: "Failed to submit request due to a network error.",
+        message: "Acceptance could not be confirmed. Your information has been kept; please try again later.",
       },
-      { status: 500 },
+      { status: timedOut ? 504 : 502 },
     );
   }
 };

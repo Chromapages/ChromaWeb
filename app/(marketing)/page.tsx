@@ -5,20 +5,23 @@ import ServicesGrid from "@/components/sections/services-grid";
 import FeaturedWork from "@/components/sections/featured-work";
 import ProcessSteps from "@/components/sections/process-steps";
 import CtaBlock from "@/components/sections/cta-block";
+import { getCaseStudies } from "@/lib/sanity/fetch";
 
 export const metadata: Metadata = {
-  title: "Digital Design Elevated.",
+  title: "Websites for service businesses",
   description:
-    "We design and build modern websites and web apps that load fast, look premium, and drive more leads.",
+    "Chromapages designs and builds websites for service businesses ready for an online presence that reflects the quality of their work.",
+  alternates: { canonical: "/" },
 };
 
-export default function HomePage() {
+export default async function HomePage() {
+  const projects = await getCaseStudies();
   return (
     <>
-      <Hero isHome />
+      <Hero isHome projects={projects.slice(0, 3)} />
       <TrustBar />
       <ServicesGrid />
-      <FeaturedWork />
+      <FeaturedWork projects={projects.slice(0, 3)} />
       <ProcessSteps />
       <CtaBlock />
     </>

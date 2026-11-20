@@ -13,9 +13,9 @@ type CtaBlockProps = {
 };
 
 export default function CtaBlock({
-  title = "Ready when you are.",
-  description = "Tell us what you need. We will help you sort out the next step, whether that is a full website, a focused page, or ongoing support.",
-  primaryLabel = "Book A Call",
+  title = "What needs to change on your website?",
+  description = "Tell us where your website falls short and what your business needs from it next.",
+  primaryLabel = "Send an inquiry",
   primaryHref = "/contact",
 }: CtaBlockProps) {
   return (
@@ -47,12 +47,6 @@ export default function CtaBlock({
               {primaryLabel}
             </Button>
           </div>
-        </ScrollReveal>
-        
-        <ScrollReveal stagger={600} className="mt-20 flex justify-center gap-10 opacity-30 grayscale filter">
-           <div className="h-6 w-24 bg-bg/20 rounded-full" />
-           <div className="h-6 w-20 bg-bg/20 rounded-full" />
-           <div className="h-6 w-28 bg-bg/20 rounded-full" />
         </ScrollReveal>
       </div>
     </section>

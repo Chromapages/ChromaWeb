@@ -6,8 +6,8 @@ import { useForm } from "react-hook-form";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 import { trackEvent } from "@/lib/analytics/events";
-import { requestSchema, type RequestFormValues } from "@/lib/validation/request";
-import { budgetRanges, projectTypes } from "@/lib/site";
+import { intakeResponseSchema, requestSchema, type RequestFormValues } from "@/lib/validation/request";
+import { projectTypes } from "@/lib/site";
 
 type FieldName = keyof RequestFormValues;
 
@@ -40,20 +40,11 @@ export default function RequestForm() {
   });
 
   const selectedProjectType = watch("projectType");
-  const selectedBudgetRange = watch("budgetRange");
 
   // Sync requestType with activeTab state
   useEffect(() => {
     setValue("requestType", activeTab);
   }, [activeTab, setValue]);
-
-  useEffect(() => {
-    if (!submitError) {
-      return;
-    }
-    const timeout = window.setTimeout(() => setSubmitError(null), 6000);
-    return () => window.clearTimeout(timeout);
-  }, [submitError]);
 
   const fieldId = (name: FieldName) => `request-${name}`;
 
@@ -65,9 +56,17 @@ export default function RequestForm() {
     event: React.KeyboardEvent<HTMLButtonElement>,
     tab: "prospect" | "client" | "question"
   ) => {
-    if (event.key === "Enter" || event.key === " ") {
+    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
+      event.preventDefault();
+      const tabs = ["prospect", "client", "question"] as const;
+      const direction = event.key === "ArrowRight" ? 1 : -1;
+      const next = tabs[(tabs.indexOf(tab) + direction + tabs.length) % tabs.length];
+      handleTabChange(next);
+      document.getElementById(`tab-${next}`)?.focus();
+    } else if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
       handleTabChange(tab);
+      event.currentTarget.focus();
     }
   };
 
@@ -75,44 +74,49 @@ export default function RequestForm() {
     setSubmitError(null);
     setSuccessMessage(null);
 
-    const response = await fetch("/api/intake", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(values),
-    });
+    try {
+      const response = await fetch("/api/intake", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(values),
+      });
 
-    if (!response.ok) {
-      const payload = (await response.json().catch(() => null)) as { message?: string } | null;
-      setSubmitError(payload?.message ?? "Something went wrong. Please try again.");
-      return;
+      if (!response.ok) {
+        setSubmitError("We couldn’t confirm receipt. Your entries are still in this form. Please try again later.");
+        return;
+      }
+
+      const accepted = intakeResponseSchema.safeParse(await response.json().catch(() => null));
+      if (!accepted.success) {
+        setSubmitError("We couldn’t confirm receipt. Your entries are still in this form. Please try again later.");
+        return;
+      }
+
+      trackEvent({
+        name: "form_submit",
+        location: "request-form",
+        pagePath: pathname,
+        pageType: "request",
+        projectType: values.requestType === "prospect" ? values.projectType : undefined,
+        budgetRange: values.requestType === "prospect" ? values.budgetRange || undefined : undefined,
+      });
+
+      setSuccessMessage(`Reference: ${accepted.data.issueIdentifier}`);
+      reset({
+        name: "",
+        email: "",
+        company: "",
+        requestType: activeTab,
+        projectType: projectTypes[0],
+        budgetRange: "",
+        message: "",
+        honeypot: "",
+      });
+    } catch {
+      setSubmitError("We couldn’t confirm receipt. Your entries are still in this form. Please try again later.");
     }
-
-    const payload = (await response.json()) as { issueIdentifier: string };
-
-    trackEvent({
-      name: "form_submit",
-      location: "request-form",
-      pagePath: pathname,
-      pageType: "request",
-      projectType: values.requestType === "prospect" ? values.projectType : undefined,
-      budgetRange: values.requestType === "prospect" ? values.budgetRange || undefined : undefined,
-    });
-
-    setSuccessMessage(
-      `Thank you! Your request has been queued as ticket ${payload.issueIdentifier}. We'll be in touch shortly.`
-    );
-    reset({
-      name: "",
-      email: "",
-      company: "",
-      requestType: activeTab,
-      projectType: projectTypes[0],
-      budgetRange: "",
-      message: "",
-      honeypot: "",
-    });
   });
 
   return (
@@ -129,17 +133,17 @@ export default function RequestForm() {
           aria-selected={activeTab === "prospect"}
           aria-controls="request-form"
           id="tab-prospect"
-          tabIndex={0}
+          tabIndex={activeTab === "prospect" ? 0 : -1}
           onClick={() => handleTabChange("prospect")}
           onKeyDown={(e) => handleTabKeyDown(e, "prospect")}
           className={clsx(
-            "w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition duration-200 outline-none cursor-pointer text-center",
+            "w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition duration-200 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary cursor-pointer text-center",
             activeTab === "prospect"
               ? "bg-surface-lowest text-primary shadow-sm font-semibold"
               : "text-on-surface/60 hover:text-on-surface hover:bg-surface-lowest/40"
           )}
         >
-          Project Inquiry
+          Project inquiry
         </button>
         <button
           type="button"
@@ -147,17 +151,17 @@ export default function RequestForm() {
           aria-selected={activeTab === "client"}
           aria-controls="request-form"
           id="tab-client"
-          tabIndex={0}
+          tabIndex={activeTab === "client" ? 0 : -1}
           onClick={() => handleTabChange("client")}
           onKeyDown={(e) => handleTabKeyDown(e, "client")}
           className={clsx(
-            "w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition duration-200 outline-none cursor-pointer text-center",
+            "w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition duration-200 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary cursor-pointer text-center",
             activeTab === "client"
               ? "bg-surface-lowest text-primary shadow-sm font-semibold"
               : "text-on-surface/60 hover:text-on-surface hover:bg-surface-lowest/40"
           )}
         >
-          Client Support
+          Client support
         </button>
         <button
           type="button"
@@ -165,17 +169,17 @@ export default function RequestForm() {
           aria-selected={activeTab === "question"}
           aria-controls="request-form"
           id="tab-question"
-          tabIndex={0}
+          tabIndex={activeTab === "question" ? 0 : -1}
           onClick={() => handleTabChange("question")}
           onKeyDown={(e) => handleTabKeyDown(e, "question")}
           className={clsx(
-            "w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition duration-200 outline-none cursor-pointer text-center",
+            "w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition duration-200 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary cursor-pointer text-center",
             activeTab === "question"
               ? "bg-surface-lowest text-primary shadow-sm font-semibold"
               : "text-on-surface/60 hover:text-on-surface hover:bg-surface-lowest/40"
           )}
         >
-          Quick Question
+          Question
         </button>
       </div>
 
@@ -200,7 +204,7 @@ export default function RequestForm() {
         noValidate
       >
         {successMessage ? (
-          <div className="rounded-structural bg-emerald-50/10 border border-emerald-500/20 p-6 text-center space-y-3">
+          <div role="status" className="rounded-structural bg-emerald-50/10 border border-emerald-500/20 p-6 text-center space-y-3">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
               <svg
                 className="h-6 w-6"
@@ -212,23 +216,25 @@ export default function RequestForm() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-emerald-500">Submission Successful</h3>
+            <h3 className="text-lg font-medium text-emerald-500">Your request was received.</h3>
             <p className="text-sm text-on-surface/80 max-w-md mx-auto">{successMessage}</p>
             <button
               type="button"
               onClick={() => setSuccessMessage(null)}
               className="mt-4 inline-flex items-center justify-center rounded-functional bg-surface-container px-4 py-2 text-sm font-medium text-on-surface hover:bg-surface-container-high transition cursor-pointer"
             >
-              Submit another request
+              Send another request
             </button>
           </div>
         ) : (
           <>
             <div className="grid gap-5 md:grid-cols-2">
-              <Field label="Your Name" error={errors.name?.message}>
+              <Field label="Your name (required)" error={errors.name?.message} errorId="request-name-error">
                 <input
                   {...register("name")}
                   id={fieldId("name")}
+                  aria-invalid={Boolean(errors.name) || undefined}
+                  aria-describedby={errors.name ? "request-name-error" : undefined}
                   type="text"
                   autoComplete="name"
                   placeholder="Jane Doe"
@@ -236,10 +242,12 @@ export default function RequestForm() {
                 />
               </Field>
 
-              <Field label="Email Address" error={errors.email?.message}>
+              <Field label="Email address (required)" error={errors.email?.message} errorId="request-email-error">
                 <input
                   {...register("email")}
                   id={fieldId("email")}
+                  aria-invalid={Boolean(errors.email) || undefined}
+                  aria-describedby={errors.email ? "request-email-error" : undefined}
                   type="email"
                   autoComplete="email"
                   placeholder="jane@example.com"
@@ -247,10 +255,12 @@ export default function RequestForm() {
                 />
               </Field>
 
-              <Field label="Company / Organization" error={errors.company?.message}>
+              <Field label="Business name (optional)" error={errors.company?.message} errorId="request-company-error">
                 <input
                   {...register("company")}
                   id={fieldId("company")}
+                  aria-invalid={Boolean(errors.company) || undefined}
+                  aria-describedby={errors.company ? "request-company-error" : undefined}
                   type="text"
                   autoComplete="organization"
                   placeholder="Acme Corp"
@@ -260,30 +270,16 @@ export default function RequestForm() {
 
               {activeTab === "prospect" ? (
                 <>
-                  <Field label="Project Type" error={errors.projectType?.message}>
+                  <Field label="Project type (optional)" error={errors.projectType?.message} errorId="request-projectType-error">
                     <select
                       {...register("projectType")}
                       id={fieldId("projectType")}
+                      aria-invalid={Boolean(errors.projectType) || undefined}
+                      aria-describedby={errors.projectType ? "request-projectType-error" : undefined}
                       className={inputClass}
                       value={selectedProjectType}
                     >
                       {projectTypes.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-
-                  <Field label="Estimated Budget" error={errors.budgetRange?.message}>
-                    <select
-                      {...register("budgetRange")}
-                      id={fieldId("budgetRange")}
-                      className={inputClass}
-                      value={selectedBudgetRange}
-                    >
-                      <option value="">Select a range</option>
-                      {budgetRanges.map((option) => (
                         <option key={option} value={option}>
                           {option}
                         </option>
@@ -297,24 +293,27 @@ export default function RequestForm() {
                 <Field
                   label={
                     activeTab === "prospect"
-                      ? "Project Summary"
+                      ? "What needs to change? (required)"
                       : activeTab === "client"
-                        ? "Support Details"
-                        : "Your Question"
+                        ? "Support request (required)"
+                        : "Your question (required)"
                   }
                   error={errors.message?.message}
+                  errorId="request-message-error"
                 >
                   <textarea
                     {...register("message")}
                     id={fieldId("message")}
+                    aria-invalid={Boolean(errors.message) || undefined}
+                    aria-describedby={errors.message ? "request-message-error" : undefined}
                     rows={6}
                     className={inputClass}
                     placeholder={
                       activeTab === "prospect"
-                        ? "Tell us what you want to build, the current site gaps, and your general timeline."
+                        ? "Tell us about your business, your current website, and what you would like it to do better."
                         : activeTab === "client"
-                          ? "Describe the issue, bug, content update, or support request in detail."
-                          : "Ask us anything about our services, process, pricing, or previous work."
+                          ? "Describe the issue or update and include the page address, if relevant. Do not include passwords or payment details."
+                          : "What would you like to know?"
                     }
                   />
                 </Field>
@@ -340,7 +339,7 @@ export default function RequestForm() {
               disabled={isSubmitting}
               className="inline-flex min-h-11 items-center justify-center rounded-functional gradient-primary px-5 py-3 text-sm font-medium text-white transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
             >
-              {isSubmitting ? "Submitting..." : "Submit request"}
+              {isSubmitting ? "Sending…" : activeTab === "prospect" ? "Send inquiry" : activeTab === "client" ? "Send support request" : "Send question"}
             </button>
           </>
         )}
@@ -352,15 +351,16 @@ export default function RequestForm() {
 type FieldProps = {
   label: string;
   error?: string;
+  errorId: string;
   children: React.ReactNode;
 };
 
-const Field = ({ label, error, children }: FieldProps) => {
+const Field = ({ label, error, errorId, children }: FieldProps) => {
   return (
     <label className="block space-y-2">
       <span className="text-label-md uppercase text-primary-container">{label}</span>
       {children}
-      {error ? <span className="text-sm text-red-500">{error}</span> : null}
+      {error ? <span id={errorId} className="text-sm text-red-500">{error}</span> : null}
     </label>
   );
 };

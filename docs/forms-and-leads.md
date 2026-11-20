@@ -1,5 +1,21 @@
 # Forms And Leads
 
+## Current implementation and verification status
+
+The public `/contact` page renders `RequestForm`, which posts to `/api/intake`.
+The server validates the shared request schema and honeypot, then forwards to the
+configured HTTPS Cloudflare Worker. Success requires its explicit acceptance and
+issue identifiers. The form shows an inline ticket receipt; it retains entered
+values and a persistent error on failures. Only confirmed acceptance emits
+`form_submit`; private fields and ticket identifiers do not enter analytics.
+
+The unused legacy `ContactForm` posts to `/api/contact`; no current page imports it.
+Do not substitute that duplicate delivery path for intake. Live delivery is not yet
+verified: deployed Worker version/ownership, long-message retention, and dispatcher
+routing remain blockers. See [Nadia → Quinn repair evidence](repair-handoff.md) for
+the exact response/error contract, dependencies, and reproducible QA steps. The
+remaining sections describe planning guidance, not proof that integrations are live.
+
 ## Purpose
 This document defines how forms, lead routing, notifications, spam protection, and post-submission handling should work for the Chromapages marketing website.
 

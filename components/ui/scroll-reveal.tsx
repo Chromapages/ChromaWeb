@@ -42,6 +42,8 @@ export default function ScrollReveal({
       }}
       className={`
         transition-all duration-700 cubic-bezier(0.16, 1, 0.3, 1)
+        focus-within:opacity-100 focus-within:translate-y-0
+        motion-reduce:opacity-100 motion-reduce:transform-none motion-reduce:transition-none
         ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}
         ${className || ""}
       `}
