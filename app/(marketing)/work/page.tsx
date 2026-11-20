@@ -31,21 +31,26 @@ export default async function WorkPage() {
         primaryAction={{ label: 'Send an inquiry', href: '/contact' }}
         secondaryAction={{ label: 'View services', href: '/services', variant: 'secondary' }}
       />
-      <section className="bg-surface-container-low">
-        <div className="mx-auto max-w-7xl px-6 py-16 md:px-8 md:py-24">
+      <section className="cp-section border-t border-outline bg-bg">
+        <div className="cp-container">
           {projects.length ? (
             <SectionHeading eyebrow="Projects" title="Context, decisions, and work completed." description="Read what the project needed, what Chromapages contributed, and any documented results." />
           ) : (
             <SectionHeading eyebrow="Work" title="Case studies" />
           )}
-          <div className="mt-10 grid gap-10">
-            {projects.map((project) => (
-              <ProjectCard key={project.slug} project={project} />
-            ))}
-            {projects.length === 0 && (
+          {projects.length > 0 ? (
+            <ul role="list" className="mt-8 list-none divide-y divide-outline border-y border-outline sm:mt-12">
+              {projects.map((project) => (
+                <li key={project.slug}>
+                  <ProjectCard project={project} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="mt-6 text-muted">
               <p role="status">Case studies are not available here right now.</p>
-            )}
-          </div>
+            </div>
+          )}
         </div>
       </section>
       <CtaBlock

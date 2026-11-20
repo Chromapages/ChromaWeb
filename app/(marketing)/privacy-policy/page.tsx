@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import BreadcrumbNav from "@/components/ui/breadcrumb-nav";
 import CtaBlock from "@/components/sections/cta-block";
-import SectionHeading from "@/components/ui/section-heading";
 import { site } from "@/lib/site";
 
 export const metadata: Metadata = {
@@ -13,22 +13,22 @@ export const metadata: Metadata = {
 export default function PrivacyPolicyPage() {
   return (
     <>
-      <section className="mx-auto max-w-7xl px-6 pt-10 md:px-8">
-        <BreadcrumbNav
-          crumbs={[
-            { label: "Home", href: "/" },
-            { label: "Privacy Policy" },
-          ]}
-        />
-      </section>
-      <section className="mx-auto max-w-4xl px-6 py-16 md:px-8 md:py-24">
-        <div className="space-y-10">
-          <SectionHeading
-            eyebrow="Legal"
-            title="Privacy Policy"
-            description={`This page describes how ${site.name} handles information collected through the website.`}
+      <section className="cp-section bg-surface-lowest">
+        <div className="cp-container max-w-[68ch]">
+          <BreadcrumbNav
+            crumbs={[
+              { label: "Home", href: "/" },
+              { label: "Privacy Policy" },
+            ]}
           />
-          <article className="space-y-6 text-body-lg text-on-surface/78">
+          <header className="mt-10 space-y-4">
+            <p className="text-xs font-semibold tracking-wide text-primary uppercase">Legal</p>
+            <h1 className="cp-heading-1 text-ink">Privacy Policy</h1>
+            <p className="cp-intro">
+              This page describes how {site.name} handles information collected through the website.
+            </p>
+          </header>
+          <article className="mt-8 space-y-8 text-muted">
             <p>Last updated: April 3, 2026</p>
             <p>
               This website may collect information that you submit through the contact form,
@@ -36,7 +36,7 @@ export default function PrivacyPolicyPage() {
               to respond to inquiries, improve the site, and measure performance.
             </p>
             <section className="space-y-3">
-              <h2 className="font-display text-2xl text-on-surface">Information we collect</h2>
+              <h2 className="cp-heading-2 text-ink">Information we collect</h2>
               <p>
                 We may collect name, email address, company, website, project type, budget
                 range, timeline, and message content when you use the contact form. We may also
@@ -45,14 +45,14 @@ export default function PrivacyPolicyPage() {
               </p>
             </section>
             <section className="space-y-3">
-              <h2 className="font-display text-2xl text-on-surface">How we use information</h2>
+              <h2 className="cp-heading-2 text-ink">How we use information</h2>
               <p>
                 Information is used to respond to inquiries, evaluate project fit, improve the
                 website, and support analytics and operational needs.
               </p>
             </section>
             <section className="space-y-3">
-              <h2 className="font-display text-2xl text-on-surface">Third-party services</h2>
+              <h2 className="cp-heading-2 text-ink">Third-party services</h2>
               <p>
                 The website may use third-party services for analytics, hosting, and form
                 processing. Those providers may process information according to their own
@@ -60,16 +60,23 @@ export default function PrivacyPolicyPage() {
               </p>
             </section>
             <section className="space-y-3">
-              <h2 className="font-display text-2xl text-on-surface">Your choices</h2>
+              <h2 className="cp-heading-2 text-ink">Your choices</h2>
               <p>
                 You can contact the business directly if you want to review, update, or request
                 deletion of information that was submitted through the website.
               </p>
             </section>
             <section className="space-y-3">
-              <h2 className="font-display text-2xl text-on-surface">Contact</h2>
+              <h2 className="cp-heading-2 text-ink">Contact</h2>
               <p>
-                Questions about this policy can be sent to {site.email}.
+                For questions about this policy, use the{" "}
+                <Link
+                  href="/contact"
+                  className="font-semibold text-primary underline underline-offset-4 hover:decoration-2"
+                >
+                  contact form
+                </Link>{" "}
+                and select Question.
               </p>
             </section>
           </article>

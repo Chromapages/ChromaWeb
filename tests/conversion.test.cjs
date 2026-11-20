@@ -404,7 +404,7 @@ test('GTM is absent for missing, placeholder and malformed IDs', () => {
     process.env.NEXT_PUBLIC_GTM_ID = id;
     const Layout = loadTs('app/layout.tsx', {
       './globals.css': {},
-      'next/font/google': { Inter: () => ({ variable: 'inter' }), Montserrat: () => ({ variable: 'montserrat' }) },
+      'next/font/local': ({ variable }) => ({ variable }),
       'next/script': (props) => React.createElement('script', props),
       '@/components/global/skip-link': () => null,
     }).default;

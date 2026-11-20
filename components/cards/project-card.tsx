@@ -1,5 +1,7 @@
+import Image from "next/image";
 import Button from "@/components/ui/button";
 import type { CaseStudy } from "@/types/sanity";
+import { urlFor } from "@/lib/sanity/image";
 import { cn } from "@/lib/utils";
 
 type ProjectCardProps = {
@@ -8,52 +10,87 @@ type ProjectCardProps = {
 };
 
 export default function ProjectCard({ project, className }: ProjectCardProps) {
-  const result = Array.isArray(project.results) ? project.results[0] : project.results;
+  const { mainImage, proofClassification, results } = project;
+  const classification = proofClassification === "internalConcept"
+    ? "Internal concept"
+    : proofClassification === "clientProject" ? "Client project" : null;
+  const alt = typeof mainImage?.alt === "string" ? mainImage.alt.trim() : "";
+  let image: string | undefined;
+  if (mainImage?.asset?._ref && alt) {
+    try {
+      image = urlFor({
+        asset: mainImage.asset,
+        crop: mainImage.crop ?? undefined,
+        hotspot: mainImage.hotspot ?? undefined,
+      }).width(1600).height(900).url();
+    } catch {
+      // Malformed media should not hide an otherwise approved project.
+    }
+  }
+  const title = project.label || project.title || "Project";
+  const result = Array.isArray(results) ? results.find((item) => item.trim()) : results?.trim();
+  const summary = project.summary || project.excerpt;
+  const challenge = project.challenge?.trim();
+  const deliverables = project.deliverables?.filter((item) => item.trim());
+  const details = challenge || deliverables?.length ? (
+    <>
+      {challenge ? (
+        <div>
+          <h4 className="text-sm font-semibold">Focus</h4>
+          <p className="mt-2 max-w-[68ch] text-muted">{challenge}</p>
+        </div>
+      ) : null}
+      {deliverables?.length ? (
+        <div>
+          <h4 className="text-sm font-semibold">Deliverables</h4>
+          <ul className="mt-2 list-disc space-y-1 ps-5 text-muted">
+            {deliverables.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+        </div>
+      ) : null}
+    </>
+  ) : null;
+
   return (
-    <article
-      className={cn(
-        "overflow-hidden rounded-structural bg-surface-lowest shadow-ambient transition duration-300 hover:-translate-y-1",
-        className,
-      )}
-    >
-      <div className="grid gap-0 md:grid-cols-[1.1fr_0.9fr]">
-        <div className="bg-surface-container-low p-7">
-          <p className="text-label-md uppercase text-primary-container">
-            {project.proofClassification === "internalConcept" ? "Internal concept" : "Client project"}
+    <article className={cn("cp-grid items-start gap-y-5 py-6 sm:py-8", className)}>
+      {image ? (
+        <Image
+          src={image}
+          alt={alt}
+          width={1600}
+          height={900}
+          sizes="(min-width: 1376px) 845px, (min-width: 1024px) calc(66.67vw - 72px), (min-width: 640px) calc(100vw - 64px), calc(100vw - 40px)"
+          className="col-span-full h-auto w-full rounded-structural lg:col-span-8"
+        />
+      ) : null}
+
+      <div className={cn("col-span-full min-w-0", image ? "lg:col-span-4" : details && "lg:col-span-8")}>
+        {classification ? (
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-primary">{classification}</p>
+        ) : null}
+        <h3 className="wrap-break-word text-xl font-semibold lg:text-2xl">{title}</h3>
+        {summary ? <p className="mt-3 max-w-[68ch] text-muted">{summary}</p> : null}
+        {result ? (
+          <p className="mt-4 max-w-[68ch] text-muted">
+            <span className="font-semibold text-ink">Result:</span> {result}
           </p>
-          <h3 className="mt-4 font-display text-2xl text-on-surface">{project.label || project.title || "Project"}</h3>
-          <p className="mt-4 text-body-lg text-on-surface/72">{project.summary || project.excerpt || ""}</p>
-          {result && (
-            <p className="mt-6 text-sm text-on-surface/72">
-              <span className="font-medium text-on-surface">Result:</span> {result}
-            </p>
-          )}
-          <div className="mt-7">
-            <Button
-              href={`/work/${project.slug}`}
-              variant="tertiary"
-              analyticsLabel={`View ${project.label || project.title}`}
-              analyticsLocation="project-card"
-            >
-              View project
-            </Button>
-          </div>
-        </div>
-        <div className="flex min-h-[16rem] flex-col justify-between bg-[linear-gradient(135deg,rgba(17,30,124,0.12),rgba(44,56,146,0.06))] p-7">
-          {project.challenge && <div className="rounded-structural bg-surface-lowest/90 p-5 shadow-ambient">
-            <p className="text-label-md uppercase text-primary-container">Focus</p>
-            <p className="mt-3 text-sm leading-6 text-on-surface/72">{project.challenge}</p>
-          </div>}
-          {Boolean(project.deliverables?.length) && <div className="mt-8">
-            <p className="text-label-md uppercase text-primary-container">Deliverables</p>
-            <ul className="mt-4 space-y-2 text-sm text-on-surface/72">
-              {project.deliverables?.map((item) => (
-                <li key={item}>• {item}</li>
-              ))}
-            </ul>
-          </div>}
-        </div>
+        ) : null}
+        <Button
+          href={`/work/${project.slug}`}
+          variant="tertiary"
+          analyticsLabel={`View ${project.label || project.title}`}
+          analyticsLocation="project-card"
+          className="mt-2"
+          aria-label={`View project: ${title}`}
+        >
+          View project
+        </Button>
+        {image && details ? <div className="mt-4 space-y-4 border-t border-outline pt-4">{details}</div> : null}
       </div>
+
+      {!image && details ? (
+        <div className="col-span-full min-w-0 space-y-4 lg:col-span-4">{details}</div>
+      ) : null}
     </article>
   );
 }

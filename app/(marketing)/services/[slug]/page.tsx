@@ -38,6 +38,7 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
   const service = await getServiceBySlug(slug)
 
   if (!service) notFound()
+  const features = service.features?.filter((feature) => feature.trim())
 
   return (
     <>
@@ -49,40 +50,37 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
         secondaryAction={{ label: 'Back to services', href: '/services', variant: 'secondary' }}
       />
 
-      <section className="bg-surface py-20 lg:py-32">
-        <div className="mx-auto max-w-7xl px-6 md:px-8">
-          <div className="grid gap-16 lg:grid-cols-3">
-            {/* Main Content */}
-            <div className="lg:col-span-2">
-              <SectionHeading eyebrow="The service" title="About this service." className="mb-12" />
-              {service.description?.length ? <RichText value={service.description} /> : <p className="text-body-lg text-on-surface/80">{service.body || service.summary}</p>}
-            </div>
+      <section className="cp-section border-t border-outline bg-bg">
+        <div className="cp-container cp-grid items-start gap-y-8">
+          <article className="col-span-full min-w-0 lg:col-span-8">
+            <SectionHeading eyebrow="The service" title="About this service." className="mb-6" />
+            {service.description?.length ? (
+              <RichText value={service.description} />
+            ) : (
+              <p className="max-w-[68ch] text-muted">{service.body || service.summary}</p>
+            )}
+          </article>
 
-            {/* Sidebar / Features */}
-            <aside className="space-y-10">
-              {Boolean(service.features?.length) && <div className="rounded-structural bg-surface-lowest p-8 shadow-ambient border border-outline/5 transition-all hover:shadow-elevated">
-                <h3 className="text-headline-xs font-display mb-6">Key Deliverables</h3>
-                <ul className="space-y-4">
-                  {service.features?.map((feature: string) => (
-                    <li key={feature} className="flex items-start gap-3 text-body-md text-on-surface/80">
-                      <span className="mt-1 h-1.5 w-1.5 rounded-full bg-primary flex-shrink-0" />
-                      {feature}
-                    </li>
-                  ))}
+          <aside className="col-span-full min-w-0 space-y-6 lg:col-span-4">
+            {features?.length ? (
+              <div className="border-t border-outline pt-5">
+                <h2 className="text-xl font-semibold">Key Deliverables</h2>
+                <ul className="mt-4 list-disc space-y-2 ps-5 text-muted">
+                  {features.map((feature) => <li key={feature}>{feature}</li>)}
                 </ul>
-              </div>}
-
-              <div className="rounded-structural bg-primary p-8 text-on-primary shadow-elevated transition-transform hover:-translate-y-1">
-                <h3 className="text-headline-xs font-display mb-4">Have a question about this service?</h3>
-                <p className="text-body-md mb-8 opacity-90 leading-relaxed">
-                  Tell us what needs to change and which service you are considering.
-                </p>
-                <Button href="/contact" variant="primary" className="w-full bg-white text-primary hover:bg-white/90 shadow-lg">
-                  Send an inquiry
-                </Button>
               </div>
-            </aside>
-          </div>
+            ) : null}
+
+            <div className="rounded-panel border border-outline bg-surface-lowest p-6">
+              <h2 className="text-xl font-semibold">Have a question about this service?</h2>
+              <p className="mt-3 text-muted">
+                Tell us what needs to change and which service you are considering.
+              </p>
+              <Button href="/contact" variant="primary" className="mt-5">
+                Send an inquiry
+              </Button>
+            </div>
+          </aside>
         </div>
       </section>
 

@@ -21,23 +21,23 @@ export default function AboutPage() {
         primaryAction={{ label: "Send an inquiry", href: "/contact" }}
         secondaryAction={{ label: "View services", href: "/services", variant: "secondary" }}
       />
-      <section className="bg-surface-container-low">
-        <div className="mx-auto grid max-w-7xl gap-5 px-6 py-16 md:px-8 md:py-24 lg:grid-cols-2">
-          <article className="rounded-structural bg-surface-lowest p-7 shadow-ambient">
+      <section className="cp-section bg-surface-lowest">
+        <div className="cp-container cp-grid gap-y-10">
+          <article className="col-span-full border-t border-outline pt-6 lg:col-span-6">
             <SectionHeading
               eyebrow="Our point of view"
               title="Help people understand the business."
             />
-            <p className="mt-5 text-body-lg text-on-surface/72">
+            <p className="mt-4 max-w-prose text-muted">
               Your website should explain what you offer, help visitors judge whether it fits their needs, and make the next step clear. Design, performance, and launch readiness all matter to that experience.
             </p>
           </article>
-          <article className="rounded-structural bg-surface-lowest p-7 shadow-ambient">
+          <article className="col-span-full border-t border-outline pt-6 lg:col-span-6">
             <SectionHeading
               eyebrow="Behind the studio"
               title="Founded and operated by Eric Black."
             />
-            <p className="mt-5 text-body-lg text-on-surface/72">
+            <p className="mt-4 max-w-prose text-muted">
               Eric Black is the founder and operator of Chromapages. The studio combines design and development with attention to the message, the visitor&apos;s next step, and launch readiness.
             </p>
           </article>

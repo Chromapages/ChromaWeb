@@ -21,22 +21,24 @@ export default function ServicesGrid({ items }: { items?: Service[] }) {
         </p>
 
         {items ? (
-          <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          items.length > 0 && <ul role="list" className="mt-8 list-none divide-y divide-outline border-y border-outline sm:mt-12">
             {items.map((service) => {
               const heading = service.label || service.title || service.slug;
               return (
-                <article key={service.slug} className="flex flex-col items-start rounded-structural border border-outline bg-surface-lowest p-8">
-                  <h3 className="wrap-break-word text-xl font-semibold lg:text-2xl">{heading}</h3>
-                  <p className="mt-4 mb-6 text-muted">{service.summary}</p>
+                <li key={service.slug} className="cp-grid items-center gap-y-2 py-6 sm:py-8">
+                  <div className="col-span-full min-w-0 lg:col-span-8">
+                    <h3 className="wrap-break-word text-xl font-semibold lg:text-2xl">{heading}</h3>
+                    <p className="mt-3 max-w-[68ch] text-muted">{service.summary}</p>
+                  </div>
                   {service.slug && (
-                    <Link href={`/services/${service.slug}`} className="cp-text-link mt-auto">
+                    <Link href={`/services/${service.slug}`} className="cp-text-link col-span-full justify-self-start lg:col-span-4 lg:justify-self-end">
                       Explore service<span className="sr-only">: {heading}</span>
                     </Link>
                   )}
-                </article>
+                </li>
               );
             })}
-          </div>
+          </ul>
         ) : (
           <>
             <ul role="list" className="mt-12 max-w-[68ch] list-none">

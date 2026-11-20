@@ -3,24 +3,25 @@ import { differentiators } from "@/lib/site";
 
 export default function Differentiators() {
   return (
-    <section className="bg-surface">
-      <div className="mx-auto max-w-7xl px-6 py-16 md:px-8 md:py-24">
+    <section className="cp-section bg-bg">
+      <div className="cp-container">
         <SectionHeading
           eyebrow="Our standard"
           title="What we want every website to do."
           description="Look Premium, Convert Clearly, Load Fast, Launch Clean, Keep Improving."
         />
-        <div className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-          {differentiators.map((item, index) => (
-            <article
-              key={item._id || `${item.title}-${index}`}
-              className="rounded-structural bg-surface-lowest p-7 shadow-ambient"
-            >
-              <h3 className="font-display text-2xl text-on-surface">{item.title}</h3>
-              <p className="mt-4 text-body-lg text-on-surface/72">{item.summary}</p>
-            </article>
+        <ul role="list" className="mt-10 divide-y divide-outline border-y border-outline">
+          {differentiators.map((item) => (
+            <li key={item.title} className="cp-grid items-baseline gap-y-2 py-5">
+              <h3 className="col-span-full text-xl leading-tight font-bold tracking-tight text-ink sm:col-span-3 lg:col-span-4">
+                {item.title}
+              </h3>
+              <p className="col-span-full max-w-prose text-muted sm:col-span-5 lg:col-span-8">
+                {item.summary}
+              </p>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   );

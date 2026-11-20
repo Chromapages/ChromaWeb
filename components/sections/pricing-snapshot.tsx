@@ -1,6 +1,5 @@
 import Button from "@/components/ui/button";
 import SectionHeading from "@/components/ui/section-heading";
-import { pricingOffers as staticOffers } from "@/lib/site";
 
 import type { PricingOffer } from "@/types/sanity";
 
@@ -9,55 +8,59 @@ type PricingSnapshotProps = {
 };
 
 export default function PricingSnapshot({ offers }: PricingSnapshotProps) {
-  const displayOffers = (offers ?? staticOffers) as PricingOffer[];
-
   return (
-    <section className="bg-surface-container-low">
-      <div className="mx-auto max-w-7xl px-6 py-16 md:px-8 md:py-24">
+    <section className="cp-section bg-surface-lowest">
+      <div className="cp-container">
         <SectionHeading
           eyebrow="Your project"
           title="What does your website need next?"
           description="A new website, a redesign, or ongoing updates involve different work. Tell us what you have and what you want to change."
         />
-        {displayOffers.length > 0 && <div className="mt-10 grid gap-5 lg:grid-cols-3">
-          {displayOffers.map((offer, index) => (
-            <article
-              key={offer._id || offer.title || index}
-              className="flex h-full flex-col rounded-structural bg-surface-lowest p-7 shadow-ambient"
-            >
-              <p className="text-label-md uppercase text-primary-container">Offer</p>
-              <h3 className="mt-4 font-display text-2xl text-on-surface">{offer.title}</h3>
-              <p className="mt-4 text-body-lg text-on-surface/72">{offer.summary}</p>
-              <p className="mt-5 text-sm text-on-surface/60">{offer.fit}</p>
-              <ul className="mt-6 space-y-3 text-sm text-on-surface/72">
-                {offer.features && offer.features.length > 0
-                  ? offer.features.map((item: string, idx: number) => (
-                      <li key={`${item}-${idx}`} className="flex gap-3">
-                        <span className="mt-2 h-2 w-2 rounded-full bg-primary" />
-                        <span>{item}</span>
-                      </li>
-                    ))
-                  : offer.includes?.map((item: string, idx: number) => (
-                      <li key={`${item}-${idx}`} className="flex gap-3">
-                        <span className="mt-2 h-2 w-2 rounded-full bg-primary" />
-                        <span>{item}</span>
-                      </li>
-                    ))}
-              </ul>
-              <p className="mt-6 text-sm font-medium text-on-surface">{offer.framing}</p>
-              <div className="mt-auto pt-8">
-                <Button
-                  href={offer.ctaLink || "/contact"}
-                  variant="secondary"
-                  analyticsLabel={offer.ctaText || offer.ctaLabel || "Discuss project"}
-                  analyticsLocation="pricing-snapshot"
+        {offers?.length ? (
+          <div className="cp-grid mt-10 gap-y-8">
+            {offers.map((offer, index) => {
+              const title = offer.title || offer.label;
+              const features = offer.features?.length ? offer.features : offer.includes;
+              const ctaLabel = offer.ctaText || offer.ctaLabel || "Discuss project";
+
+              return (
+                <article
+                  key={offer._id || title || index}
+                  className="col-span-full flex flex-col border-t border-outline pt-6 sm:col-span-4"
                 >
-                  {offer.ctaText || offer.ctaLabel || "Discuss project"}
-                </Button>
-              </div>
-            </article>
-          ))}
-        </div>}
+                  <p className="text-xs font-semibold tracking-wide text-primary uppercase">Offer</p>
+                  {title ? (
+                    <h3 className="mt-3 text-xl leading-tight font-bold tracking-tight text-ink">
+                      {title}
+                    </h3>
+                  ) : null}
+                  <p className="mt-4 text-muted">{offer.summary}</p>
+                  {offer.fit ? <p className="mt-4 text-sm text-muted">{offer.fit}</p> : null}
+                  {features?.length ? (
+                    <ul className="mt-5 list-disc space-y-2 ps-5 text-sm text-muted">
+                      {features.map((item, idx) => (
+                        <li key={`${item}-${idx}`}>{item}</li>
+                      ))}
+                    </ul>
+                  ) : null}
+                  {offer.framing ? (
+                    <p className="mt-5 text-sm font-medium text-ink">{offer.framing}</p>
+                  ) : null}
+                  <div className="mt-auto pt-6">
+                    <Button
+                      href={offer.ctaLink || "/contact"}
+                      variant="secondary"
+                      analyticsLabel={ctaLabel}
+                      analyticsLocation="pricing-snapshot"
+                    >
+                      {ctaLabel}
+                    </Button>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        ) : null}
       </div>
     </section>
   );

@@ -33,12 +33,8 @@ export type CaseStudy = {
   content?: PortableTextBlock[]
   results?: string | string[]
   tags?: string[]
-  category?: string // Static fallback
-  result?: string // Static fallback
   challenge?: string // Static fallback
-  approach?: string // Static fallback
   deliverables?: string[] // Static fallback
-  imageAlt?: string // Static fallback
 }
 
 export type Service = {

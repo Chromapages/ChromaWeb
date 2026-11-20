@@ -1,33 +1,27 @@
+import type { PortableTextBlock } from '@portabletext/types'
 import { PortableText, type PortableTextComponents } from '@portabletext/react'
-import { clsx, type ClassValue } from 'clsx'
-import { twMerge } from 'tailwind-merge'
+import { cn } from '@/lib/utils'
 
-function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs))
-}
+const subheading = 'mt-8 mb-3 text-xl font-semibold leading-tight'
 
 const components: PortableTextComponents = {
   block: {
-    h1: ({ children }) => <h1 className="text-display-sm font-display mb-6 mt-10">{children}</h1>,
-    h2: ({ children }) => <h2 className="text-headline-md font-display mb-4 mt-8">{children}</h2>,
-    h3: ({ children }) => <h3 className="text-headline-sm font-display mb-3 mt-6">{children}</h3>,
-    normal: ({ children }) => <p className="text-body-lg text-on-surface/80 mb-4 leading-relaxed">{children}</p>,
+    h1: ({ children }) => <h3 className={subheading}>{children}</h3>,
+    h2: ({ children }) => <h3 className={subheading}>{children}</h3>,
+    h3: ({ children }) => <h4 className="mt-6 mb-3 font-semibold">{children}</h4>,
+    normal: ({ children }) => <p className="mb-4">{children}</p>,
     blockquote: ({ children }) => (
-      <blockquote className="border-l-4 border-primary bg-primary/5 px-6 py-4 my-8 rounded-r-lg italic shadow-sm">
+      <blockquote className="my-6 border-s border-control ps-4 italic">
         {children}
       </blockquote>
     ),
   },
   list: {
-    bullet: ({ children }) => <ul className="list-disc pl-6 mb-6 space-y-2">{children}</ul>,
-    number: ({ children }) => <ol className="list-decimal pl-6 mb-6 space-y-2">{children}</ol>,
-  },
-  listItem: {
-    bullet: ({ children }) => <li className="text-body-lg text-on-surface/80">{children}</li>,
-    number: ({ children }) => <li className="text-body-lg text-on-surface/80">{children}</li>,
+    bullet: ({ children }) => <ul className="mb-6 list-disc space-y-2 ps-6">{children}</ul>,
+    number: ({ children }) => <ol className="mb-6 list-decimal space-y-2 ps-6">{children}</ol>,
   },
   marks: {
-    strong: ({ children }) => <strong className="font-bold text-on-surface">{children}</strong>,
+    strong: ({ children }) => <strong className="font-semibold text-ink">{children}</strong>,
     link: ({ children, value }) => {
       const href = typeof value?.href === 'string' ? value.href.trim() : ''
       if (!/^(https?:\/\/|mailto:|tel:|\/(?!\/)|#)/i.test(href)) return <>{children}</>
@@ -36,7 +30,7 @@ const components: PortableTextComponents = {
         <a
           href={href}
           rel={rel}
-          className="text-primary underline underline-offset-4 hover:text-primary-hover transition-colors font-medium"
+          className="font-medium text-primary underline underline-offset-4 hover:decoration-2"
         >
           {children}
         </a>
@@ -44,8 +38,6 @@ const components: PortableTextComponents = {
     },
   },
 }
-
-import type { PortableTextBlock } from "@portabletext/types";
 
 interface RichTextProps {
   value: PortableTextBlock | PortableTextBlock[];
@@ -56,7 +48,7 @@ export default function RichText({ value, className }: RichTextProps) {
   if (!value) return null
 
   return (
-    <div className={cn('prose prose-on-surface max-w-none', className)}>
+    <div className={cn('max-w-[68ch] wrap-anywhere text-muted', className)}>
       <PortableText value={value} components={components} />
     </div>
   )

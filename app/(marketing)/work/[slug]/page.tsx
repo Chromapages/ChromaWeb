@@ -7,6 +7,7 @@ import SectionHeading from '@/components/ui/section-heading'
 import RichText from '@/components/ui/rich-text'
 import { getCaseStudyBySlug, getCaseStudies } from '@/lib/sanity/fetch'
 import { urlFor } from '@/lib/sanity/image'
+import { cn } from '@/lib/utils'
 
 import type { CaseStudy } from '@/types/sanity'
 
@@ -41,9 +42,25 @@ export default async function CaseStudyDetailPage({ params }: CaseStudyPageProps
   if (!project) notFound()
   const results = (Array.isArray(project.results) ? project.results : project.results ? [project.results] : [])
     .filter((result) => result.trim())
-  const classification = project.proofClassification === 'internalConcept' ? 'Internal concept' : 'Client project'
+  const tags = project.tags?.filter((tag) => tag.trim())
+  const hasSidebar = Boolean(results.length || tags?.length)
+  const classification = project.proofClassification === 'internalConcept'
+    ? 'Internal concept'
+    : project.proofClassification === 'clientProject' ? 'Client project' : ''
   const { mainImage } = project
   const alt = typeof mainImage?.alt === 'string' ? mainImage.alt.trim() : ''
+  let image: string | undefined
+  if (mainImage?.asset?._ref && alt) {
+    try {
+      image = urlFor({
+        asset: mainImage.asset,
+        crop: mainImage.crop ?? undefined,
+        hotspot: mainImage.hotspot ?? undefined,
+      }).url()
+    } catch {
+      // Malformed media should not hide an otherwise approved project.
+    }
+  }
 
   return (
     <>
@@ -55,72 +72,47 @@ export default async function CaseStudyDetailPage({ params }: CaseStudyPageProps
         secondaryAction={{ label: 'View all work', href: '/work', variant: 'secondary' }}
       />
 
-      {mainImage?.asset && alt ? (
-        <section className="bg-surface py-10">
-          <div className="mx-auto max-w-7xl px-6 md:px-8">
-            <div className="relative aspect-video overflow-hidden rounded-structural shadow-elevated border border-outline/10">
+      <section className="cp-section border-t border-outline bg-bg">
+        <div className="cp-container">
+          {image ? (
+            <div className="relative mb-8 aspect-video overflow-hidden rounded-structural border border-outline bg-surface-lowest sm:mb-12">
               <Image
-                src={urlFor({
-                  asset: mainImage.asset,
-                  crop: mainImage.crop ?? undefined,
-                  hotspot: mainImage.hotspot ?? undefined,
-                }).url()}
+                src={image}
                 alt={alt}
                 fill
-                sizes="(min-width: 1280px) 1216px, (min-width: 768px) calc(100vw - 64px), calc(100vw - 48px)"
-                className="object-cover"
-                priority
+                sizes="(min-width: 1376px) 1280px, (min-width: 1024px) calc(100vw - 96px), (min-width: 640px) calc(100vw - 64px), calc(100vw - 40px)"
+                className="object-contain"
+                loading="eager"
               />
             </div>
-          </div>
-        </section>
-      ) : null}
+          ) : null}
 
-      <section className="bg-surface py-20 lg:py-32">
-        <div className="mx-auto max-w-7xl px-6 md:px-8">
-          <div className="grid gap-16 lg:grid-cols-3">
-            {/* Main Content */}
-            <div className="lg:col-span-2">
-              <SectionHeading eyebrow="The work" title="Project context and decisions." className="mb-12" />
+          <div className="cp-grid items-start gap-y-8">
+            <article className={cn('col-span-full min-w-0', hasSidebar && 'lg:col-span-8')}>
+              <SectionHeading eyebrow="The work" title="Project context and decisions." className="mb-6" />
               <RichText value={project.content || []} />
-            </div>
+            </article>
 
-            {/* Results Sidebar */}
-            <aside className="space-y-10">
-              {results.length > 0 && <div className="rounded-structural bg-surface-lowest p-8 shadow-ambient border border-outline/5 transition-all hover:shadow-elevated">
-                <SectionHeading eyebrow="Evidence" title="Documented results" className="mb-6" />
-                <ul className="space-y-6">
-                  {results.map(
-                    (result: string) => (
-                      <li key={result} className="group">
-                        <div className="flex items-start gap-4">
-                          <span className="mt-1 h-2 w-2 rounded-full bg-primary flex-shrink-0 group-hover:scale-125 transition-transform" />
-                          <p className="text-body-lg text-on-surface/90 font-medium leading-snug">
-                            {result}
-                          </p>
-                        </div>
-                      </li>
-                    )
-                  )}
-                </ul>
-              </div>}
-
-              {Boolean(project.tags?.length) && <div className="rounded-structural bg-surface-container-high p-8 shadow-ambient border border-outline/10">
-                <h4 className="text-label-lg uppercase tracking-widest text-on-surface/50 mb-4">
-                  Tags
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {project.tags?.map((tag: string) => (
-                    <span
-                      key={tag}
-                      className="px-3 py-1 rounded-full bg-surface-lowest text-label-md font-medium border border-outline/10 shadow-sm"
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              </div>}
-            </aside>
+            {hasSidebar ? (
+              <aside className="col-span-full min-w-0 space-y-6 lg:col-span-4">
+                {results.length > 0 ? (
+                  <div className="border-t border-outline pt-5">
+                    <SectionHeading eyebrow="Evidence" title="Documented results" className="mb-4" />
+                    <ul className="list-disc space-y-2 ps-5 text-muted">
+                      {results.map((result) => <li key={result}>{result}</li>)}
+                    </ul>
+                  </div>
+                ) : null}
+                {tags?.length ? (
+                  <div className="border-t border-outline pt-5">
+                    <h2 className="text-xl font-semibold">Tags</h2>
+                    <ul role="list" className="mt-3 flex list-none flex-wrap gap-x-4 gap-y-2 text-sm text-muted">
+                      {tags.map((tag) => <li key={tag}>{tag}</li>)}
+                    </ul>
+                  </div>
+                ) : null}
+              </aside>
+            ) : null}
           </div>
         </div>
       </section>

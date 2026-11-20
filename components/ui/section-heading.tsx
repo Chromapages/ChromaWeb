@@ -24,11 +24,11 @@ export default function SectionHeading({
       )}
     >
       {eyebrow ? (
-        <p className="text-label-md uppercase text-primary-container">{eyebrow}</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.08em] text-primary">{eyebrow}</p>
       ) : null}
-      <h2 className="font-display text-headline-md text-on-surface">{title}</h2>
+      <h2 className="cp-heading-2 wrap-break-word">{title}</h2>
       {description ? (
-        <p className="max-w-2xl text-body-lg text-on-surface/72">{description}</p>
+        <p className="cp-intro text-pretty">{description}</p>
       ) : null}
     </div>
   );

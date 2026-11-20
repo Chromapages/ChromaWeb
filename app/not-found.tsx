@@ -3,12 +3,16 @@ import Button from "@/components/ui/button";
 
 export default function NotFound() {
   return (
-    <main className="mx-auto flex min-h-[70vh] max-w-4xl flex-col justify-center px-6 py-20 text-center md:px-8">
-      <p className="text-label-md uppercase text-primary-container">404</p>
-      <h1 className="mt-4 font-display text-4xl text-on-surface md:text-display-lg">
+    <main
+      id="main-content"
+      tabIndex={-1}
+      className="cp-container cp-section flex min-h-[70vh] flex-col items-center justify-center text-center"
+    >
+      <p className="text-sm font-semibold text-primary">404</p>
+      <h1 className="cp-heading-1 mt-4 text-ink">
         This page does not exist.
       </h1>
-      <p className="mx-auto mt-6 max-w-2xl text-body-lg text-on-surface/72">
+      <p className="cp-intro mt-6">
         The page you tried to open may have moved, been removed, or never existed in the
         first place.
       </p>
@@ -26,7 +30,7 @@ export default function NotFound() {
         </Button>
       </div>
       <div className="mt-8">
-        <Link href="/work" className="text-sm text-primary-container underline-offset-4 hover:underline">
+        <Link href="/work" className="cp-text-link">
           View work
         </Link>
       </div>

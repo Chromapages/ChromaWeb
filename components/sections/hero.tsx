@@ -29,23 +29,23 @@ export default function Hero({
   secondaryAction = { label: "View work", href: "/work" },
 }: HeroProps) {
   return (
-    <section className="cp-major bg-bg" aria-labelledby="hero-title">
+    <section className={cn("bg-bg", isHome ? "cp-major" : "cp-section")} aria-labelledby="hero-title">
       <div className={cn("cp-container", isHome && "cp-grid lg:items-center")}>
-        <div className={isHome ? "col-span-full min-w-0 lg:col-span-5" : "mx-auto max-w-4xl text-center"}>
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-primary">{eyebrow}</p>
+        <div className={isHome ? "col-span-full min-w-0 lg:col-span-5" : "max-w-3xl"}>
+          {eyebrow && <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-primary">{eyebrow}</p>}
           <h1 id="hero-title" className={cn("cp-heading-1 wrap-break-word", isHome ? "font-black" : "font-extrabold")}>
             {title ?? (
               <>A website that reflects {isHome ? <span className="text-primary">the quality</span> : "the quality"} of your business.</>
             )}
           </h1>
-          <p className={cn("cp-intro mt-6", !isHome && "mx-auto")}>{description}</p>
+          <p className="cp-intro mt-6">{description}</p>
           <div className={cn(
             "mt-8 flex flex-wrap gap-3",
-            isHome ? "flex-col items-start sm:flex-row sm:items-center" : "items-center justify-center",
+            isHome ? "flex-col items-start sm:flex-row sm:items-center" : "items-center",
           )}>
             <Button
               href={primaryAction.href}
-              className={cn("min-h-14 px-6 text-[0.9375rem]", isHome && "w-full sm:w-auto")}
+              className={isHome ? "min-h-14 w-full px-6 text-[0.9375rem] sm:w-auto" : undefined}
               analyticsLabel="Hero primary CTA"
               analyticsLocation="hero"
             >
@@ -54,7 +54,7 @@ export default function Hero({
             <Button
               href={secondaryAction.href}
               variant={isHome ? "tertiary" : secondaryAction.variant ?? "secondary"}
-              className={isHome ? "min-h-11 py-0 text-base" : "min-h-14 px-6 text-[0.9375rem]"}
+              className={isHome ? "min-h-11 py-0 text-base" : undefined}
               analyticsLabel="Hero secondary CTA"
               analyticsLocation="hero"
             >

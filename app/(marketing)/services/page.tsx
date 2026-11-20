@@ -25,25 +25,24 @@ export default async function ServicesPage() {
         secondaryAction={{ label: "View pricing", href: "/pricing", variant: "secondary" }}
       />
       <ServicesGrid items={services} />
-      <section className="bg-surface">
-        <div className="mx-auto max-w-7xl px-6 py-16 md:px-8 md:py-24">
+      <section className="cp-section border-t border-outline bg-bg">
+        <div className="cp-container cp-grid items-start gap-y-8">
           <SectionHeading
             eyebrow="Who this is for"
             title="Your business has moved forward. Your website needs to catch up."
             description="For service-business owners who want their website to reflect their work and make the next step clear."
+            className="col-span-full lg:col-span-8"
           />
-          <div className="mt-10 grid gap-5 lg:grid-cols-2">
+          <ul role="list" className="col-span-full list-none divide-y divide-outline border-y border-outline lg:col-span-4">
             {[
               "Your website no longer reflects the quality of your business.",
               "Your services are difficult to understand online.",
               "Visitors struggle to find the next step.",
               "You want clarity about the work before you begin.",
             ].map((item) => (
-              <div key={item} className="rounded-structural bg-surface-lowest p-7 shadow-ambient">
-                <p className="text-body-lg text-on-surface">{item}</p>
-              </div>
+              <li key={item} className="py-4 text-muted">{item}</li>
             ))}
-          </div>
+          </ul>
         </div>
       </section>
       <CtaBlock

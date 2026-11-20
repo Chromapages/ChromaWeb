@@ -15,19 +15,6 @@ export type ServiceItem = {
   faq: { _id?: string; question: string; answer: string }[];
 };
 
-export type ProjectItem = {
-  _id?: string;
-  slug: string;
-  label: string;
-  category: string;
-  summary: string;
-  result: string;
-  challenge: string;
-  approach: string;
-  deliverables: string[];
-  imageAlt: string;
-};
-
 export type ProcessStep = {
   _id?: string;
   title: string;
@@ -56,11 +43,6 @@ export type FaqItem = {
   answer: string;
 };
 
-export type FooterGroup = {
-  title: string;
-  links: NavItem[];
-};
-
 export const site = {
   name: "Chromapages",
   tagline: "Digital Design Elevated.",
@@ -79,40 +61,6 @@ export const navigation: NavItem[] = [
   { label: "Pricing", href: "/pricing" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },
-];
-
-export const footerGroups: FooterGroup[] = [
-  {
-    title: "Services",
-    links: [
-      { label: "Marketing Websites", href: "/services/marketing-websites" },
-      { label: "Landing Pages", href: "/services/landing-pages" },
-      { label: "E-Commerce", href: "/services/ecommerce" },
-      { label: "Web Apps", href: "/services/web-apps" },
-      { label: "Ongoing Support", href: "/services/ongoing-support" },
-    ],
-  },
-  {
-    title: "Company",
-    links: [
-      { label: "Work", href: "/work" },
-      { label: "Process", href: "/process" },
-      { label: "Pricing", href: "/pricing" },
-      { label: "About", href: "/about" },
-    ],
-  },
-  {
-    title: "Contact",
-    links: [
-      { label: "Contact Form", href: "/contact" },
-    ],
-  },
-  {
-    title: "Legal",
-    links: [
-      { label: "Privacy Policy", href: "/privacy-policy" },
-    ],
-  },
 ];
 
 export const services: ServiceItem[] = [
@@ -248,69 +196,6 @@ export const services: ServiceItem[] = [
   },
 ];
 
-export const featuredProjects: ProjectItem[] = [
-  {
-    slug: "service-site-refresh",
-    label: "Service Site Refresh",
-    category: "Marketing Website",
-    summary:
-      "A cleaner homepage structure and stronger conversion path for a business that needed to feel more credible fast.",
-    result:
-      "The site was reorganized around the offer, trust signals were surfaced earlier, and the path to inquiry became much clearer.",
-    challenge:
-      "The original experience was hard to scan and did not give visitors a confident next step.",
-    approach:
-      "We reworked the hero, simplified the hierarchy, and tightened the proof and CTA placement across the page.",
-    deliverables: [
-      "Homepage strategy",
-      "Service page architecture",
-      "Mobile-first responsive build",
-      "Launch QA and tracking setup",
-    ],
-    imageAlt: "Abstract preview for a service website redesign",
-  },
-  {
-    slug: "campaign-landing-page",
-    label: "Campaign Landing Page",
-    category: "Landing Page",
-    summary:
-      "A focused campaign page built to reduce distractions and keep the visitor moving toward one action.",
-    result:
-      "The page turned a broad message into a direct conversion path with a tighter narrative and fewer exits.",
-    challenge:
-      "The audience needed a fast answer and a clear reason to act without digging through the full website.",
-    approach:
-      "We designed the offer around a single goal, then used proof, FAQ, and CTA repetition to remove hesitation.",
-    deliverables: [
-      "Offer framing",
-      "CTA system",
-      "FAQ handling",
-      "Analytics-ready build",
-    ],
-    imageAlt: "Abstract preview for a focused landing page build",
-  },
-  {
-    slug: "startup-mvp",
-    label: "Startup MVP",
-    category: "Web App",
-    summary:
-      "A lightweight product presence with a structure that could grow without needing to be rebuilt from scratch.",
-    result:
-      "The interface was organized around the first critical tasks so the team could launch, learn, and iterate with less friction.",
-    challenge:
-      "The team needed something credible enough to launch but flexible enough to keep evolving.",
-    approach:
-      "We kept the experience compact, used reusable patterns, and made sure the structure supported future expansion.",
-    deliverables: [
-      "UX planning",
-      "Reusable components",
-      "Responsive build",
-      "Handoff documentation",
-    ],
-    imageAlt: "Abstract preview for a startup MVP interface",
-  },
-];
-
 export const processSteps: ProcessStep[] = [
   { title: "Purpose", summary: "What should your website help visitors understand or do?" },
   { title: "Scope", summary: "Which pages, features, or problems need attention?" },
@@ -419,18 +304,6 @@ export const budgetRanges = [
   "Not Sure Yet",
 ] as const;
 
-export const timelineOptions = [
-  "ASAP",
-  "Within 30 Days",
-  "1-3 Months",
-  "3+ Months",
-  "Just Exploring",
-] as const;
-
 export function getServiceBySlug(slug: string) {
   return services.find((service) => service.slug === slug);
-}
-
-export function getProjectBySlug(slug: string) {
-  return featuredProjects.find((project) => project.slug === slug);
 }
