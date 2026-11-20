@@ -1,59 +1,26 @@
 import { client } from './client'
 import {
   caseStudiesQuery,
-  homePageQuery,
   navigationQuery,
   projectBySlugQuery,
   serviceBySlugQuery,
   servicesQuery,
   processStepsQuery,
   pricingServicesQuery,
-  partnersQuery,
 } from './queries'
-import { navigation as staticNavigation, site as staticSite, services as staticServices, pricingOffers as staticPricingOffers, processSteps as staticProcessSteps } from '../site'
-import type { CaseStudy, Service, Partner, PricingOffer, ProcessStep } from '@/types/sanity'
+import { navigation as staticNavigation, services as staticServices, pricingOffers as staticPricingOffers, processSteps as staticProcessSteps } from '../site'
+import type { CaseStudy, NavigationItem, Service, PricingOffer, ProcessStep } from '@/types/sanity'
 
-export async function getHomePageData() {
-  if (!client) {
-    console.warn('Sanity client not configured, falling back to static data')
-    return {
-      title: staticSite.name,
-      description: staticSite.description,
-      hero: {
-        headline: 'Websites that help you get more customers.',
-        subheadline: staticSite.description,
-        ctaText: staticSite.bookingLabel,
-        ctaLink: staticSite.bookingHref,
-      },
-      featuredProjects: [],
-    }
-  }
-  try {
-    const data = await client.fetch(homePageQuery)
-    if (!data) throw new Error('No data found')
-    return data
-  } catch (error) {
-    console.warn('Failed to fetch home page data from Sanity, falling back to static data', error)
-    return {
-      title: staticSite.name,
-      description: staticSite.description,
-      hero: {
-        headline: 'Websites that help you get more customers.',
-        subheadline: staticSite.description,
-        ctaText: staticSite.bookingLabel,
-        ctaLink: staticSite.bookingHref
-      },
-      featuredProjects: [] // Fallback for projects if needed
-    }
-  }
-}
-
-export async function getNavigation() {
+export async function getNavigation(): Promise<NavigationItem[]> {
   if (!client) return staticNavigation
   try {
-    const data = await client.fetch(navigationQuery)
-    if (!data?.items) throw new Error('No navigation data found')
-    return data.items
+    const data = await client.fetch<{ items: NavigationItem[] | null } | null>(navigationQuery)
+    const items = data?.items?.filter(({ label, href }) =>
+      typeof label === 'string' && label.trim() &&
+      typeof href === 'string' && href.startsWith('/') && !href.startsWith('//') &&
+      !/[\s\\]/.test(href),
+    )
+    return items?.length ? items : staticNavigation
   } catch (error) {
     console.warn('Failed to fetch navigation from Sanity, falling back to static data', error)
     return staticNavigation
@@ -126,16 +93,5 @@ export async function getPricingServices(): Promise<PricingOffer[]> {
   } catch (error) {
     console.warn('Failed to fetch pricing services from Sanity, falling back to static data', error)
     return staticPricingOffers
-  }
-}
-
-export async function getPartners(): Promise<Partner[]> {
-  if (!client) return []
-  try {
-    const data = await client.fetch(partnersQuery)
-    return data || []
-  } catch (error) {
-    console.warn('Failed to fetch partners from Sanity, falling back to empty array', error)
-    return []
   }
 }

@@ -9,9 +9,9 @@ issue identifiers. The form shows an inline ticket receipt; it retains entered
 values and a persistent error on failures. Only confirmed acceptance emits
 `form_submit`; private fields and ticket identifiers do not enter analytics.
 
-The unused legacy `ContactForm` posts to `/api/contact`; no current page imports it.
-Do not substitute that duplicate delivery path for intake. Live delivery is not yet
-verified: deployed Worker version/ownership, long-message retention, and dispatcher
+The legacy `/api/contact` route was removed; `/api/intake` is the only submission
+endpoint. Live delivery is not yet verified: deployed Worker version/ownership,
+long-message retention, and dispatcher
 routing remain blockers. See [Nadia → Quinn repair evidence](repair-handoff.md) for
 the exact response/error contract, dependencies, and reproducible QA steps. The
 remaining sections describe planning guidance, not proof that integrations are live.

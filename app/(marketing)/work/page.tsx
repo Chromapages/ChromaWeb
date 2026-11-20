@@ -1,19 +1,26 @@
 import type { Metadata } from 'next'
+import { cache } from 'react'
 import Hero from '@/components/sections/hero'
 import ProjectCard from '@/components/cards/project-card'
 import CtaBlock from '@/components/sections/cta-block'
 import SectionHeading from '@/components/ui/section-heading'
 import { getCaseStudies } from '@/lib/sanity/fetch'
 
-export const metadata: Metadata = {
-  title: 'Work',
-  description:
-    'Case studies are not available here right now. Explore Chromapages services or send an inquiry about your website.',
-  alternates: { canonical: '/work' },
+const getWorkProjects = cache(getCaseStudies)
+
+export async function generateMetadata(): Promise<Metadata> {
+  const hasProjects = (await getWorkProjects()).length > 0
+  return {
+    title: hasProjects ? 'Website projects' : 'Work',
+    description: hasProjects
+      ? 'Explore project context, the work completed, and the decisions behind Chromapages projects.'
+      : 'Case studies are not available here right now. Explore Chromapages services or send an inquiry about your website.',
+    alternates: { canonical: '/work' },
+  }
 }
 
 export default async function WorkPage() {
-  const projects = await getCaseStudies()
+  const projects = await getWorkProjects()
 
   return (
     <>

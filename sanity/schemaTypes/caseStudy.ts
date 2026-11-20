@@ -18,6 +18,18 @@ export const caseStudy = defineType({
       validation: (Rule) => Rule.required().custom((value) => value === 'draft' || value === 'approved' || 'Select a valid proof approval.'),
     }),
     defineField({
+      name: 'proofClassification',
+      title: 'Project classification',
+      type: 'string',
+      options: { list: [
+        { title: 'Internal concept', value: 'internalConcept' },
+        { title: 'Client project', value: 'clientProject' },
+      ], layout: 'radio' },
+      description: 'Use Client project only for verified commissioned work. Internal concepts must not claim client or business outcomes.',
+      validation: (Rule) => Rule.required().custom((value) =>
+        value === 'internalConcept' || value === 'clientProject' || 'Select a valid project classification.'),
+    }),
+    defineField({
       name: 'title',
       title: 'Project Title',
       type: 'string',
@@ -34,19 +46,37 @@ export const caseStudy = defineType({
       name: 'client',
       title: 'Client Name',
       type: 'string',
+      validation: (Rule) => Rule.custom((value, { document }) =>
+        document?.proofClassification !== 'internalConcept' || !value?.trim() || 'Leave the client name empty for internal concepts.'),
     }),
     defineField({
       name: 'excerpt',
       title: 'Excerpt',
       type: 'text',
       rows: 2,
-      validation: (Rule) => Rule.required().custom((value) => Boolean(value?.trim()) || 'Enter an approved summary.'),
+      validation: (Rule) => Rule.required().custom((value, { document }) => {
+        if (!value?.trim()) return 'Enter an approved summary.'
+        return document?.proofClassification !== 'internalConcept'
+          || value.startsWith('Internal concept. Not commissioned client work.')
+          || 'Start the excerpt with “Internal concept. Not commissioned client work.”'
+      }),
     }),
     defineField({
       name: 'mainImage',
       title: 'Main Image',
       type: 'image',
       options: { hotspot: true },
+      fields: [
+        defineField({
+          name: 'alt',
+          title: 'Alternative text',
+          type: 'string',
+          validation: (Rule) => Rule.custom((value, { parent }) =>
+            !(parent as { asset?: unknown } | undefined)?.asset
+            || Boolean(value?.trim())
+            || 'Describe the selected image.'),
+        }),
+      ],
     }),
     defineField({
       name: 'content',

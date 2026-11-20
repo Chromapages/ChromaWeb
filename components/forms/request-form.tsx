@@ -1,369 +1,359 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useEffect, useRef, useState } from "react";
+import { type SubmitEvent, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { useForm } from "react-hook-form";
 import { usePathname } from "next/navigation";
-import clsx from "clsx";
+import Link from "next/link";
+import Button from "@/components/ui/button";
 import { trackEvent } from "@/lib/analytics/events";
 import { intakeResponseSchema, requestSchema, type RequestFormValues } from "@/lib/validation/request";
-import { projectTypes } from "@/lib/site";
 
-type FieldName = keyof RequestFormValues;
+const requestTypes = {
+  prospect: {
+    label: "Project inquiry",
+    messageLabel: "What needs to change?",
+    messageHelp: "Tell us about your business, your current website, and what you would like it to do better.",
+    submitLabel: "Send inquiry",
+  },
+  client: {
+    label: "Client support",
+    messageLabel: "Support request",
+    messageHelp: "Describe the issue or update and include the page address, if relevant. Do not include passwords or payment details.",
+    submitLabel: "Send support request",
+  },
+  question: {
+    label: "Question",
+    messageLabel: "Your question",
+    messageHelp: "What would you like to know?",
+    submitLabel: "Send question",
+  },
+};
+
+const defaultValues: RequestFormValues = {
+  name: "",
+  email: "",
+  company: "",
+  requestType: "prospect",
+  message: "",
+  honeypot: "",
+};
+
+const requestOptions = Object.entries(requestTypes);
+const fields = ["requestType", "name", "email", "company", "message"] as const;
+type FieldName = (typeof fields)[number];
+
+const fieldId = (name: FieldName) => `request-${name}`;
+const unconfirmed = "We couldn’t confirm receipt. Your entries are still in this form. Please try again later.";
+const headingClass = "text-[clamp(1.5rem,2.25vw,2rem)] leading-tight font-bold tracking-tight";
+
+// Keep the server markup and the first hydration render disabled.
+const subscribeToHydration = () => () => {};
+const hydratedOnClient = () => true;
+const hydratedOnServer = () => false;
 
 export default function RequestForm() {
   const pathname = usePathname();
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"prospect" | "client" | "question">("prospect");
+  const [receipt, setReceipt] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const hydrated = useSyncExternalStore(subscribeToHydration, hydratedOnClient, hydratedOnServer);
   const formStarted = useRef(false);
+  const submission = useRef<"idle" | "submitting" | "accepted">("idle");
+  const errorSummary = useRef<HTMLDivElement>(null);
+  const receiptHeading = useRef<HTMLHeadingElement>(null);
+  const focusRequestType = useRef(false);
 
   const {
     register,
     handleSubmit,
-    setValue,
     watch,
-    formState: { errors, isSubmitting },
+    formState: { errors, submitCount },
     reset,
+    setFocus,
   } = useForm<RequestFormValues>({
     resolver: zodResolver(requestSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      company: "",
-      requestType: "prospect",
-      projectType: projectTypes[0],
-      budgetRange: "",
-      message: "",
-      honeypot: "",
-    },
+    defaultValues,
+    shouldFocusError: false,
+    reValidateMode: "onChange",
   });
 
-  const selectedProjectType = watch("projectType");
+  const copy = requestTypes[watch("requestType")];
+  const invalidFields = fields.filter((name) => errors[name]?.message);
 
-  // Sync requestType with activeTab state
   useEffect(() => {
-    setValue("requestType", activeTab);
-  }, [activeTab, setValue]);
-
-  const fieldId = (name: FieldName) => `request-${name}`;
-
-  const handleTabChange = (tab: "prospect" | "client" | "question") => {
-    setActiveTab(tab);
-  };
-
-  const handleTabKeyDown = (
-    event: React.KeyboardEvent<HTMLButtonElement>,
-    tab: "prospect" | "client" | "question"
-  ) => {
-    if (event.key === "ArrowLeft" || event.key === "ArrowRight") {
-      event.preventDefault();
-      const tabs = ["prospect", "client", "question"] as const;
-      const direction = event.key === "ArrowRight" ? 1 : -1;
-      const next = tabs[(tabs.indexOf(tab) + direction + tabs.length) % tabs.length];
-      handleTabChange(next);
-      document.getElementById(`tab-${next}`)?.focus();
-    } else if (event.key === "Enter" || event.key === " ") {
-      event.preventDefault();
-      handleTabChange(tab);
-      event.currentTarget.focus();
+    if (submitCount) {
+      errorSummary.current?.focus();
     }
-  };
+  }, [submitCount]);
 
-  const onSubmit = handleSubmit(async (values) => {
+  useEffect(() => {
+    if (receipt) {
+      receiptHeading.current?.focus();
+    } else if (focusRequestType.current) {
+      focusRequestType.current = false;
+      setFocus("requestType");
+    }
+  }, [receipt, setFocus]);
+
+  const submitRequest = handleSubmit(async (values) => {
+    const body = JSON.stringify(values);
+    setPending(true);
     setSubmitError(null);
-    setSuccessMessage(null);
 
     try {
       const response = await fetch("/api/intake", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(values),
+        headers: { "Content-Type": "application/json" },
+        body,
+        signal: AbortSignal.timeout(15_000),
       });
-
-      if (!response.ok) {
-        setSubmitError("We couldn’t confirm receipt. Your entries are still in this form. Please try again later.");
-        return;
-      }
-
-      const accepted = intakeResponseSchema.safeParse(await response.json().catch(() => null));
+      const accepted = intakeResponseSchema.safeParse(response.ok ? await response.json() : null);
       if (!accepted.success) {
-        setSubmitError("We couldn’t confirm receipt. Your entries are still in this form. Please try again later.");
+        setSubmitError(unconfirmed);
         return;
       }
 
-      trackEvent({
-        name: "form_submit",
-        location: "request-form",
-        pagePath: pathname,
-        pageType: "request",
-        projectType: values.requestType === "prospect" ? values.projectType : undefined,
-        budgetRange: values.requestType === "prospect" ? values.budgetRange || undefined : undefined,
-      });
-
-      setSuccessMessage(`Reference: ${accepted.data.issueIdentifier}`);
-      reset({
-        name: "",
-        email: "",
-        company: "",
-        requestType: activeTab,
-        projectType: projectTypes[0],
-        budgetRange: "",
-        message: "",
-        honeypot: "",
-      });
+      submission.current = "accepted";
+      setReceipt(accepted.data.issueIdentifier);
     } catch {
-      setSubmitError("We couldn’t confirm receipt. Your entries are still in this form. Please try again later.");
+      setSubmitError(unconfirmed);
+      return;
     }
+
+    trackEvent({
+      name: "form_submit",
+      location: "request-form",
+      pagePath: pathname,
+      pageType: "request",
+    });
+  });
+
+  const onSubmit = async (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!hydrated || submission.current !== "idle") {
+      return;
+    }
+
+    // Take the lock before React Hook Form's asynchronous resolver can yield.
+    submission.current = "submitting";
+    try {
+      await submitRequest();
+    } finally {
+      if (submission.current === "submitting") {
+        submission.current = "idle";
+      }
+      setPending(false);
+    }
+  };
+
+  const validationProps = (name: FieldName, help = false) => ({
+    "aria-invalid": errors[name] ? true : undefined,
+    "aria-describedby":
+      [
+        help ? `${fieldId(name)}-help` : null,
+        errors[name] ? `${fieldId(name)}-error` : null,
+      ].filter(Boolean).join(" ") || undefined,
+  });
+
+  const inputProps = (name: FieldName, help = false) => ({
+    ...register(name),
+    ...validationProps(name, help),
+    id: fieldId(name),
+    className: inputClass,
   });
 
   return (
-    <div className="space-y-6">
-      {/* Tab bar */}
-      <div
-        role="tablist"
-        aria-label="Request types"
-        className="flex space-x-1 rounded-xl bg-surface-container-low p-1.5"
-      >
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "prospect"}
-          aria-controls="request-form"
-          id="tab-prospect"
-          tabIndex={activeTab === "prospect" ? 0 : -1}
-          onClick={() => handleTabChange("prospect")}
-          onKeyDown={(e) => handleTabKeyDown(e, "prospect")}
-          className={clsx(
-            "w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition duration-200 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary cursor-pointer text-center",
-            activeTab === "prospect"
-              ? "bg-surface-lowest text-primary shadow-sm font-semibold"
-              : "text-on-surface/60 hover:text-on-surface hover:bg-surface-lowest/40"
-          )}
-        >
-          Project inquiry
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "client"}
-          aria-controls="request-form"
-          id="tab-client"
-          tabIndex={activeTab === "client" ? 0 : -1}
-          onClick={() => handleTabChange("client")}
-          onKeyDown={(e) => handleTabKeyDown(e, "client")}
-          className={clsx(
-            "w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition duration-200 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary cursor-pointer text-center",
-            activeTab === "client"
-              ? "bg-surface-lowest text-primary shadow-sm font-semibold"
-              : "text-on-surface/60 hover:text-on-surface hover:bg-surface-lowest/40"
-          )}
-        >
-          Client support
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeTab === "question"}
-          aria-controls="request-form"
-          id="tab-question"
-          tabIndex={activeTab === "question" ? 0 : -1}
-          onClick={() => handleTabChange("question")}
-          onKeyDown={(e) => handleTabKeyDown(e, "question")}
-          className={clsx(
-            "w-full rounded-lg py-2.5 text-sm font-medium leading-5 transition duration-200 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary cursor-pointer text-center",
-            activeTab === "question"
-              ? "bg-surface-lowest text-primary shadow-sm font-semibold"
-              : "text-on-surface/60 hover:text-on-surface hover:bg-surface-lowest/40"
-          )}
-        >
-          Question
-        </button>
-      </div>
+    <div className="w-full max-w-[640px] rounded-panel border border-outline bg-surface-lowest p-6 sm:p-8">
+      {receipt ? (
+        <>
+          <h2
+            id="request-heading"
+            aria-describedby="request-reference"
+            ref={receiptHeading}
+            tabIndex={-1}
+            className={`${headingClass} scroll-mt-24 text-success`}
+          >
+            Your request was received.
+          </h2>
+          <p id="request-reference" className="mt-4 wrap-anywhere">Reference: {receipt}</p>
+          <Button
+            type="button"
+            variant="tertiary"
+            className="cp-text-link mt-4"
+            onClick={() => {
+              reset();
+              submission.current = "idle";
+              focusRequestType.current = true;
+              setReceipt(null);
+            }}
+          >
+            Send another request
+          </Button>
+        </>
+      ) : (
+        <>
+          <h2 id="request-heading" className={headingClass}>Tell us what needs to change.</h2>
+          <p className="mt-4 text-muted">
+            Share your current website address, if you have one. A few sentences about the problem will help.
+          </p>
+          <noscript>JavaScript is required to submit this form.</noscript>
 
-      <form
-        id="request-form"
-        role="tabpanel"
-        aria-labelledby={`tab-${activeTab}`}
-        className="space-y-6 rounded-structural bg-surface-lowest p-6 shadow-ambient md:p-8"
-        onSubmit={onSubmit}
-        onFocusCapture={() => {
-          if (formStarted.current) {
-            return;
-          }
-          formStarted.current = true;
-          trackEvent({
-            name: "form_start",
-            location: "request-form",
-            pagePath: pathname,
-            pageType: "request",
-          });
-        }}
-        noValidate
-      >
-        {successMessage ? (
-          <div role="status" className="rounded-structural bg-emerald-50/10 border border-emerald-500/20 p-6 text-center space-y-3">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
-              <svg
-                className="h-6 w-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
+          <form
+            className="mt-8 space-y-6"
+            method="post"
+            noValidate
+            aria-labelledby="request-heading"
+            aria-busy={pending}
+            onSubmit={onSubmit}
+            onFocusCapture={() => {
+              if (formStarted.current) {
+                return;
+              }
+              formStarted.current = true;
+              trackEvent({
+                name: "form_start",
+                location: "request-form",
+                pagePath: pathname,
+                pageType: "request",
+              });
+            }}
+          >
+            {invalidFields.length > 0 ? (
+              <div
+                ref={errorSummary}
+                role="group"
+                aria-labelledby="request-errors-heading"
+                tabIndex={-1}
+                className="scroll-mt-24 rounded-functional border border-error p-4 text-error"
               >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-medium text-emerald-500">Your request was received.</h3>
-            <p className="text-sm text-on-surface/80 max-w-md mx-auto">{successMessage}</p>
-            <button
-              type="button"
-              onClick={() => setSuccessMessage(null)}
-              className="mt-4 inline-flex items-center justify-center rounded-functional bg-surface-container px-4 py-2 text-sm font-medium text-on-surface hover:bg-surface-container-high transition cursor-pointer"
-            >
-              Send another request
-            </button>
-          </div>
-        ) : (
-          <>
-            <div className="grid gap-5 md:grid-cols-2">
-              <Field label="Your name (required)" error={errors.name?.message} errorId="request-name-error">
-                <input
-                  {...register("name")}
-                  id={fieldId("name")}
-                  aria-invalid={Boolean(errors.name) || undefined}
-                  aria-describedby={errors.name ? "request-name-error" : undefined}
-                  type="text"
-                  autoComplete="name"
-                  placeholder="Jane Doe"
-                  className={inputClass}
-                />
-              </Field>
+                <p id="request-errors-heading" className="font-semibold">Check your answers</p>
+                <ul className="mt-2">
+                  {invalidFields.map((name) => (
+                    <li key={name}>
+                      <a
+                        href={`#${fieldId(name)}`}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          setFocus(name);
+                        }}
+                        className="inline-flex min-h-11 items-center underline underline-offset-4"
+                      >
+                        {errors[name]?.message}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
 
-              <Field label="Email address (required)" error={errors.email?.message} errorId="request-email-error">
-                <input
-                  {...register("email")}
-                  id={fieldId("email")}
-                  aria-invalid={Boolean(errors.email) || undefined}
-                  aria-describedby={errors.email ? "request-email-error" : undefined}
-                  type="email"
-                  autoComplete="email"
-                  placeholder="jane@example.com"
-                  className={inputClass}
-                />
-              </Field>
+            <fieldset disabled={!hydrated || pending} className="min-w-0 space-y-6">
+              <fieldset className="min-w-0">
+                <legend className="mb-3 font-semibold">Request type</legend>
+                <div className="grid gap-2 sm:grid-cols-3">
+                  {requestOptions.map(([value, option]) => {
+                    const isDefault = value === defaultValues.requestType;
+                    return (
+                      <label
+                        key={value}
+                        className="flex min-h-12 cursor-pointer items-center gap-2 rounded-functional border border-control px-3 py-2 text-sm has-checked:border-accent has-checked:bg-bg has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-accent has-disabled:cursor-default"
+                      >
+                        <input
+                          {...register("requestType")}
+                          {...validationProps("requestType")}
+                          id={isDefault ? fieldId("requestType") : `request-type-${value}`}
+                          type="radio"
+                          value={value}
+                          defaultChecked={isDefault}
+                          required
+                          className="size-4 shrink-0 scroll-mt-24 accent-accent"
+                        />
+                        {option.label}
+                      </label>
+                    );
+                  })}
+                </div>
+                {errors.requestType?.message ? (
+                  <p id={`${fieldId("requestType")}-error`} className="mt-2 text-sm text-error">
+                    {errors.requestType.message}
+                  </p>
+                ) : null}
+              </fieldset>
 
-              <Field label="Business name (optional)" error={errors.company?.message} errorId="request-company-error">
-                <input
-                  {...register("company")}
-                  id={fieldId("company")}
-                  aria-invalid={Boolean(errors.company) || undefined}
-                  aria-describedby={errors.company ? "request-company-error" : undefined}
-                  type="text"
-                  autoComplete="organization"
-                  placeholder="Acme Corp"
-                  className={inputClass}
-                />
-              </Field>
-
-              {activeTab === "prospect" ? (
-                <>
-                  <Field label="Project type (optional)" error={errors.projectType?.message} errorId="request-projectType-error">
-                    <select
-                      {...register("projectType")}
-                      id={fieldId("projectType")}
-                      aria-invalid={Boolean(errors.projectType) || undefined}
-                      aria-describedby={errors.projectType ? "request-projectType-error" : undefined}
-                      className={inputClass}
-                      value={selectedProjectType}
-                    >
-                      {projectTypes.map((option) => (
-                        <option key={option} value={option}>
-                          {option}
-                        </option>
-                      ))}
-                    </select>
-                  </Field>
-                </>
-              ) : null}
-
-              <div className="md:col-span-2">
+              <div className="grid gap-6 sm:grid-cols-2">
+                <Field name="name" label="Your name" required error={errors.name?.message}>
+                  <input {...inputProps("name")} type="text" autoComplete="name" required />
+                </Field>
+                <Field name="email" label="Email address" required error={errors.email?.message}>
+                  <input {...inputProps("email")} type="email" autoComplete="email" required />
+                </Field>
+                <Field name="company" label="Business name" error={errors.company?.message}>
+                  <input {...inputProps("company")} type="text" autoComplete="organization" maxLength={120} />
+                </Field>
                 <Field
-                  label={
-                    activeTab === "prospect"
-                      ? "What needs to change? (required)"
-                      : activeTab === "client"
-                        ? "Support request (required)"
-                        : "Your question (required)"
-                  }
+                  name="message"
+                  label={copy.messageLabel}
+                  help={copy.messageHelp}
+                  required
                   error={errors.message?.message}
-                  errorId="request-message-error"
                 >
-                  <textarea
-                    {...register("message")}
-                    id={fieldId("message")}
-                    aria-invalid={Boolean(errors.message) || undefined}
-                    aria-describedby={errors.message ? "request-message-error" : undefined}
-                    rows={6}
-                    className={inputClass}
-                    placeholder={
-                      activeTab === "prospect"
-                        ? "Tell us about your business, your current website, and what you would like it to do better."
-                        : activeTab === "client"
-                          ? "Describe the issue or update and include the page address, if relevant. Do not include passwords or payment details."
-                          : "What would you like to know?"
-                    }
-                  />
+                  <textarea {...inputProps("message", true)} rows={6} required />
                 </Field>
               </div>
-            </div>
 
-            <div className="sr-only">
-              <label htmlFor={fieldId("honeypot")}>Leave this field empty</label>
-              <input {...register("honeypot")} id={fieldId("honeypot")} type="text" tabIndex={-1} />
-            </div>
+              <div className="sr-only" aria-hidden="true">
+                <label htmlFor="request-honeypot">Leave this field empty</label>
+                <input {...register("honeypot")} id="request-honeypot" type="text" tabIndex={-1} autoComplete="off" />
+              </div>
+            </fieldset>
 
+            <p className="text-sm text-muted">
+              Before sending, read the <Link href="/privacy-policy" className="cp-text-link">Privacy policy</Link>.
+            </p>
             {submitError ? (
-              <p
-                className="rounded-structural bg-red-50/10 border border-red-500/20 px-4 py-3 text-sm text-red-500"
-                role="alert"
-              >
+              <p role="alert" className="rounded-functional border border-error p-4 text-sm text-error">
                 {submitError}
               </p>
             ) : null}
-
-            <button
+            <Button
               type="submit"
-              disabled={isSubmitting}
-              className="inline-flex min-h-11 items-center justify-center rounded-functional gradient-primary px-5 py-3 text-sm font-medium text-white transition hover:translate-y-[-1px] disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
+              disabled={!hydrated}
+              aria-disabled={pending || undefined}
+              className="w-full aria-disabled:cursor-wait aria-disabled:hover:bg-outline aria-disabled:active:bg-outline"
             >
-              {isSubmitting ? "Sending…" : activeTab === "prospect" ? "Send inquiry" : activeTab === "client" ? "Send support request" : "Send question"}
-            </button>
-          </>
-        )}
-      </form>
+              {pending ? "Sending…" : copy.submitLabel}
+            </Button>
+          </form>
+
+          <p role="status" className="sr-only">{pending ? "Sending…" : ""}</p>
+        </>
+      )}
     </div>
   );
 }
 
 type FieldProps = {
+  name: Exclude<FieldName, "requestType">;
   label: string;
+  required?: boolean;
+  help?: string;
   error?: string;
-  errorId: string;
   children: React.ReactNode;
 };
 
-const Field = ({ label, error, errorId, children }: FieldProps) => {
+function Field({ name, label, required, help, error, children }: FieldProps) {
+  const id = fieldId(name);
   return (
-    <label className="block space-y-2">
-      <span className="text-label-md uppercase text-primary-container">{label}</span>
+    <div className={`min-w-0 space-y-2 ${name === "company" || name === "message" ? "sm:col-span-2" : ""}`}>
+      <label htmlFor={id} className="block font-semibold">
+        {label} <span className="font-normal text-muted">({required ? "required" : "optional"})</span>
+      </label>
       {children}
-      {error ? <span id={errorId} className="text-sm text-red-500">{error}</span> : null}
-    </label>
+      {help ? <p id={`${id}-help`} className="text-sm text-muted">{help}</p> : null}
+      {error ? <p id={`${id}-error`} className="text-sm text-error">{error}</p> : null}
+    </div>
   );
-};
+}
 
 const inputClass =
-  "w-full rounded-functional bg-surface-container-low px-4 py-3 text-sm text-on-surface transition placeholder:text-on-surface/35 focus:bg-surface-lowest focus:outline-none focus:ring-2 focus:ring-primary/20";
+  "min-h-12 w-full min-w-0 scroll-mt-24 rounded-functional border border-control bg-surface-lowest px-4 py-3 text-[1rem] text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent aria-invalid:border-error disabled:bg-bg";

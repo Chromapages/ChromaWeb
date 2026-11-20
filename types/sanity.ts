@@ -1,13 +1,5 @@
-import type { SanityImageSource } from "@sanity/image-url"
+import type { SanityImageCrop, SanityImageHotspot, SanityReference } from "@sanity/image-url"
 import type { PortableTextBlock } from "@portabletext/types"
-
-export type Partner = {
-  _id?: string
-  name: string
-  logo: SanityImageSource
-  website?: string
-  orderRank?: number
-}
 
 export type PricingOffer = {
   _id?: string
@@ -28,8 +20,14 @@ export type CaseStudy = {
   title?: string // Maps to label in static
   label?: string // Static fallback
   slug: string // Always a string after GROQ "slug": slug.current
+  proofClassification: "internalConcept" | "clientProject"
   client?: string
-  mainImage?: SanityImageSource
+  mainImage?: {
+    asset?: SanityReference | null
+    crop?: SanityImageCrop | null
+    hotspot?: SanityImageHotspot | null
+    alt?: string | null
+  } | null
   excerpt?: string // Maps to summary in static
   summary?: string // Static fallback
   content?: PortableTextBlock[]
@@ -70,5 +68,5 @@ export type ProcessStep = {
 
 export type NavigationItem = {
   label: string
-  path: string
+  href: string
 }

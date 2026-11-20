@@ -1,3 +1,4 @@
+require('next/dist/server/node-environment-baseline');
 const { test, afterEach } = require('node:test');
 const assert = require('node:assert/strict');
 const { parse, evaluate } = require('groq-js');
@@ -97,7 +98,8 @@ const queries = () => loadTs('lib/sanity/queries.ts', { 'next-sanity': { groq } 
 const block = (text) => ({ _type: 'block', children: [{ _type: 'span', text }] });
 const approved = {
   _id: 'approved', _type: 'caseStudy', title: 'Approved project', slug: { current: 'approved' },
-  proofStatus: 'approved', excerpt: 'Owner-approved project summary.', content: [block('Verified work.')],
+  proofStatus: 'approved', proofClassification: 'clientProject',
+  excerpt: 'Owner-approved project summary.', content: [block('Verified work.')],
 };
 async function query(query, dataset, params = {}) {
   return (await evaluate(parse(query), { dataset, params })).get();
@@ -112,16 +114,62 @@ test('listing and detail share eligibility: only approved, populated case studie
     { ...approved, _id: 'no-title', slug: { current: 'no-title' }, title: '' },
     { ...approved, _id: 'no-summary', slug: { current: 'no-summary' }, excerpt: '' },
     { ...approved, _id: 'no-slug', slug: { current: '' } },
+    { ...approved, _id: 'unclassified', slug: { current: 'unclassified' }, proofClassification: undefined },
+    { ...approved, _id: 'invalid-classification', slug: { current: 'invalid-classification' }, proofClassification: 'other' },
   ];
   const listings = await query(caseStudiesQuery, dataset);
   assert.deepEqual(listings.map((project) => project.slug), ['approved']);
   for (const project of listings) {
     const detail = await query(projectBySlugQuery, dataset, { slug: project.slug });
     assert.equal(detail.title, project.title);
+    assert.equal(detail.proofClassification, 'clientProject');
+    assert.equal(project.proofClassification, 'clientProject');
     assert.equal(detail.excerpt, project.excerpt);
     assert.ok(detail.content.length);
   }
-  assert.equal(await query(projectBySlugQuery, dataset, { slug: 'empty' }), null);
+  for (const slug of ['empty', 'unclassified', 'invalid-classification']) {
+    assert.equal(await query(projectBySlugQuery, dataset, { slug }), null);
+  }
+});
+
+test('CMS navigation projects href and falls back without usable entries', async () => {
+  const { navigation } = loadTs('lib/site.ts');
+  const unusable = [
+    { label: 'Missing' },
+    { label: 'Empty', path: '' },
+    { label: 'Whitespace', path: '   ' },
+    { label: 'Protocol relative', path: '//example.invalid' },
+    { label: 'Non-link', path: 'javascript:void(0)' },
+    { label: ' ', path: '/services' },
+  ];
+  for (const [items, expected] of [
+    [[{ label: 'Our work', path: '/work' }, ...unusable], [{ label: 'Our work', href: '/work' }]],
+    [unusable, navigation],
+    [null, navigation],
+  ]) {
+    const dataset = items ? [{ _id: 'nav', _type: 'navigation', items }] : [];
+    const { getNavigation } = loadTs('lib/sanity/fetch.ts', {
+      './client': { client: { fetch: (source) => query(source, dataset) } },
+      'next-sanity': { groq },
+    });
+    assert.deepEqual(await getNavigation(), expected);
+  }
+});
+
+test('only Studio routes receive the Sanity content security policy', async () => {
+  const { unstable_getResponseFromNextConfig } = require('next/experimental/testing/server');
+  process.env.NEXT_PUBLIC_SANITY_PROJECT_ID = 'synthetic-cms';
+  const nextConfig = loadTs('next.config.ts').default;
+  for (const [path, studio] of [['/', false], ['/portal-admin', false], ['/portal-admin/login', false], ['/admin', true], ['/admin/structure', true]]) {
+    const response = await unstable_getResponseFromNextConfig({ url: `https://example.invalid${path}`, nextConfig });
+    const policy = response.headers.get('content-security-policy');
+    assert.ok(policy, path);
+    const connections = policy.split('; ').find((directive) => directive.startsWith('connect-src ')).split(' ');
+    for (const host of ['api.sanity.io', 'cdn.sanity.io', 'synthetic-cms.api.sanity.io', 'synthetic-cms.apicdn.sanity.io']) {
+      assert.equal(connections.includes(`https://${host}`), studio, `${path}: ${host}`);
+    }
+    if (!studio) assert.doesNotMatch(policy, /sanity\.io/);
+  }
 });
 
 test('pricing fallback uses existing offers in missing, failed and empty CMS states', async () => {
@@ -137,41 +185,71 @@ test('pricing fallback uses existing offers in missing, failed and empty CMS sta
   assert.deepEqual(await getPricingServices(), cmsOffers);
 });
 
-test('proof card omits invented results, focus and deliverables', () => {
+test('proof card follows explicit classification and omits invented results', () => {
   const ProjectCard = loadTs('components/cards/project-card.tsx', {
     '@/components/ui/button': ({ href, children }) => React.createElement('a', { href }, children),
   }).default;
-  const html = renderToStaticMarkup(React.createElement(ProjectCard, { project: { title: 'Verified project', slug: 'verified', excerpt: 'Verified summary' } }));
-  assert.match(html, /\/work\/verified/);
-  assert.doesNotMatch(html, /Result:|Digital Transformation|Development|Design<|See Case Study/);
+  for (const [proofClassification, label, client] of [
+    ['internalConcept', 'Internal concept', 'Legacy client value'],
+    ['clientProject', 'Client project', undefined],
+  ]) {
+    const project = { title: 'Verified project', slug: 'verified', excerpt: 'Verified summary', proofClassification, client };
+    const html = renderToStaticMarkup(React.createElement(ProjectCard, { project }));
+    assert.match(html, /href="\/work\/verified"/);
+    assert.ok(html.includes(`>${label}</p>`));
+    assert.doesNotMatch(html, /Result:|Digital Transformation|Development|Design<|See Case Study/);
+  }
 });
 
-function findElement(node, type) {
+function findElement(node, predicate) {
   if (!node || typeof node !== 'object') return undefined;
-  if (node.type === type) return node;
-  return React.Children.toArray(node.props?.children).map((child) => findElement(child, type)).find(Boolean);
+  if (predicate(node)) return node;
+  for (const child of React.Children.toArray(node.props?.children)) {
+    const match = findElement(child, predicate);
+    if (match) return match;
+  }
 }
 
-function requestForm() {
+function requestForm({ hydrated = true } = {}) {
   const state = [];
-  let stateIndex = 0;
+  const refs = [];
+  let stateIndex;
+  let refIndex;
   let resets = 0;
   const events = [];
   const RequestForm = loadTs('components/forms/request-form.tsx', {
     react: { ...React,
-      useState: (initial) => { const index = stateIndex++; state[index] = initial; return [initial, (value) => { state[index] = value; }]; },
-      useRef: (current) => ({ current }), useEffect: () => {},
+      useState(initial) {
+        const index = stateIndex++;
+        if (!(index in state)) state[index] = initial;
+        return [state[index], (value) => { state[index] = value; }];
+      },
+      useRef(current) { return refs[refIndex++] ??= { current }; },
+      useEffect: () => {},
+      useSyncExternalStore: (_subscribe, client, server) => hydrated ? client() : server(),
     },
     'next/navigation': { usePathname: () => '/contact' },
     'react-hook-form': { useForm: () => ({
-      register: () => ({}), handleSubmit: (callback) => () => callback(submission),
-      setValue: () => {}, watch: () => '', formState: { errors: {}, isSubmitting: false },
-      reset: () => { resets++; },
+      register: (name) => ({ name }), handleSubmit: (callback) => () => callback(submission),
+      watch: () => 'prospect', formState: { errors: {}, submitCount: 0 },
+      setFocus: () => {}, reset: () => { resets++; },
     }) },
+    '@/components/ui/button': ({ children, type, disabled }) => React.createElement('button', { type, disabled }, children),
     '@/lib/analytics/events': { trackEvent: (event) => events.push(event) },
   }).default;
-  const form = findElement(RequestForm(), 'form');
-  return { submit: form.props.onSubmit, focus: form.props.onFocusCapture, state, events, resets: () => resets };
+  function render() {
+    stateIndex = refIndex = 0;
+    return RequestForm();
+  }
+  const form = findElement(render(), (node) => node.type === 'form');
+  return {
+    submit: () => form.props.onSubmit({ preventDefault() {} }),
+    focus: form.props.onFocusCapture,
+    render,
+    state,
+    events,
+    resets: () => resets,
+  };
 }
 
 test('public form retains values and emits no success for failed or malformed responses', async () => {
@@ -185,8 +263,10 @@ test('public form retains values and emits no success for failed or malformed re
     const form = requestForm();
     global.fetch = respond;
     await form.submit();
-    assert.equal(typeof form.state[0], 'string');
-    assert.equal(form.state[1], null);
+    const html = renderToStaticMarkup(form.render());
+    assert.match(html, /role="alert"[^>]*>We couldn’t confirm receipt/);
+    assert.match(html, /<textarea[^>]+name="message"/);
+    assert.doesNotMatch(html, /Your request was received|Reference:/);
     assert.equal(form.resets(), 0);
     assert.equal(form.events.length, 0);
   }
@@ -196,16 +276,40 @@ test('public form records one accepted submission without private fields', async
   const form = requestForm();
   form.focus(); form.focus();
   assert.equal(form.events.filter((event) => event.name === 'form_start').length, 1);
-  global.fetch = async () => Response.json({ success: true, issueIdentifier: 'QA-123' });
+  let requests = 0;
+  global.fetch = async () => {
+    requests++;
+    return Response.json({ success: true, issueIdentifier: 'QA-123' });
+  };
   await form.submit();
-  assert.match(form.state[1], /QA-123/);
+  assert.equal(form.state[1], 'QA-123');
+  const receipt = form.render();
+  assert.match(renderToStaticMarkup(receipt), /Reference: QA-123/);
+  assert.equal(form.resets(), 0);
+  findElement(receipt, (node) => node.props?.children === 'Send another request').props.onClick();
   assert.equal(form.resets(), 1);
+  assert.match(renderToStaticMarkup(form.render()), /Send inquiry/);
+  assert.equal(requests, 1);
   const events = form.events.filter((event) => event.name === 'form_submit');
   assert.equal(events.length, 1);
+  const { name, ...payload } = events[0];
+  assert.equal(name, 'form_submit');
   for (const field of ['name', 'email', 'company', 'message', 'issueIdentifier', 'issueUrl']) {
-    if (field !== 'name') assert.equal(field in events[0], false);
+    assert.equal(field in payload, false);
   }
-  assert.equal(events[0].name, 'form_submit');
+});
+
+test('the unhydrated form cannot submit and renders an honest no-script notice', async () => {
+  const form = requestForm({ hydrated: false });
+  const html = renderToStaticMarkup(form.render());
+  assert.match(html, /<noscript>JavaScript is required to submit this form\.<\/noscript>/);
+  assert.match(html, /<fieldset disabled=""/);
+  assert.match(html, /<button[^>]*type="submit"[^>]*disabled=""/);
+  assert.doesNotMatch(html, /mailto:/);
+  global.fetch = () => assert.fail('unhydrated form must not send a request');
+  await form.submit();
+  assert.deepEqual(form.events, []);
+  assert.equal(form.resets(), 0);
 });
 
 const displayMocks = {
@@ -224,14 +328,6 @@ test('empty Work listing intentionally offers no unavailable example links', asy
   assert.doesNotMatch(html, /href="\/work\//);
 });
 
-test('TrustBar shows the operating standard without unsupported endorsements', () => {
-  const TrustBar = loadTs('components/sections/trust-bar.tsx').default;
-  const html = renderToStaticMarkup(React.createElement(TrustBar));
-  assert.match(html, /Our standard/);
-  assert.match(html, /Look Premium, Convert Clearly, Load Fast, Launch Clean, Keep Improving\./);
-  assert.doesNotMatch(html, /Trusted by industry leaders|Partner|Logo /);
-});
-
 test('pricing passes empty offers and suppresses unapproved offer cards', async () => {
   const PricingSnapshot = loadTs('components/sections/pricing-snapshot.tsx', displayMocks).default;
   const PricingPage = loadTs('app/(marketing)/pricing/page.tsx', {
@@ -239,48 +335,68 @@ test('pricing passes empty offers and suppresses unapproved offer cards', async 
     '@/components/sections/pricing-snapshot': PricingSnapshot,
     '@/components/sections/faq-accordion': () => null,
   }).default;
-  const snapshot = findElement(await PricingPage(), PricingSnapshot);
+  const snapshot = findElement(await PricingPage(), (node) => node.type === PricingSnapshot);
   assert.ok(snapshot);
   assert.deepEqual(snapshot.props.offers, []);
   const html = renderToStaticMarkup(React.createElement(PricingSnapshot, { offers: [] }));
   assert.doesNotMatch(html, /Launch Website|Landing Page Sprint/);
 });
 
-test('case study detail omits unsupported results and technology claims', async () => {
-  const Detail = loadTs('app/(marketing)/work/[slug]/page.tsx', {
-    ...displayMocks,
-    '@/lib/sanity/fetch': { getCaseStudyBySlug: async () => ({ title: 'Verified work', excerpt: 'Verified narrative' }) },
-    '@/lib/sanity/image': {},
-    '@/components/ui/rich-text': () => null,
-  }).default;
-  const html = renderToStaticMarkup(await Detail({ params: Promise.resolve({ slug: 'verified' }) }));
-  assert.doesNotMatch(html, /Results|Better conversion|Improved load times|Clean handoff|Next.js|Tailwind|GSAP/);
+test('case study detail uses explicit classification and shows only labelled media', async () => {
+  const asset = { _ref: 'image-test-1920x1080-png' };
+  for (const [proofClassification, label, alt] of [
+    ['internalConcept', 'Internal concept', undefined],
+    ['clientProject', 'Client project', '   '],
+    ['clientProject', 'Client project', '  Website project screenshot  '],
+  ]) {
+    const project = { slug: 'verified', title: 'Verified work', excerpt: 'Verified narrative', proofClassification, mainImage: { asset, alt } };
+    const Detail = loadTs('app/(marketing)/work/[slug]/page.tsx', {
+      ...displayMocks,
+      '@/components/sections/hero': ({ eyebrow }) => React.createElement('p', null, eyebrow),
+      '@/lib/sanity/fetch': { getCaseStudyBySlug: async () => project },
+      '@/lib/sanity/image': { urlFor: () => ({ url: () => 'https://cdn.sanity.io/images/example.png' }) },
+      'next/image': ({ alt, src }) => React.createElement('img', { alt, src }),
+      '@/components/ui/rich-text': () => null,
+    }).default;
+    const html = renderToStaticMarkup(await Detail({ params: Promise.resolve({ slug: project.slug }) }));
+    assert.ok(html.includes(`>${label}</p>`));
+    if (alt?.trim()) assert.match(html, /<img[^>]+alt="Website project screenshot"/);
+    else assert.doesNotMatch(html, /<img\b/);
+    assert.doesNotMatch(html, /Documented results|Better conversion|Improved load times|Clean handoff|Next.js|Tailwind/);
+  }
 });
 
-test('Hero creates motion only for no-preference and cleans up media listeners', () => {
-  for (const allowMotion of [false, true]) {
-    let cleanup;
-    let reverted = false;
-    let timelines = 0;
-    const Hero = loadTs('components/sections/hero.tsx', {
-      react: { ...React, useRef: () => ({ current: null }) },
-      '@/components/ui/button': () => null,
-      '@gsap/react': { useGSAP: (callback) => { cleanup = callback(); } },
-      gsap: {
-        matchMedia: () => ({
-          add: (condition, callback) => {
-            assert.equal(condition, '(prefers-reduced-motion: no-preference)');
-            if (allowMotion) callback();
-          }, revert: () => { reverted = true; },
-        }),
-        timeline: () => { timelines++; return { to: () => {} }; }, set: () => {},
-      },
-    }).default;
-    Hero({});
-    assert.equal(timelines, allowMotion ? 1 : 0);
-    cleanup();
-    assert.equal(reverted, true);
-  }
+test('Home renders the standards in order and keeps core content visible without JS', async () => {
+  const Home = loadTs('app/(marketing)/page.tsx', {
+    '@/components/ui/button': displayMocks['@/components/ui/button'],
+    '@/lib/sanity/fetch': { getCaseStudies: async () => [] },
+  }).default;
+  const html = renderToStaticMarkup(await Home());
+  const standards = html.match(/aria-labelledby="standards-title"[^>]*>.*?<ol\b[^>]*>(.*?)<\/ol>/s);
+  assert.ok(standards, 'standards must render as an ordered list');
+  assert.deepEqual(
+    [...standards[1].matchAll(/<li\b[^>]*>.*?<span[^>]*>([^<>]+)<\/span><\/li>/gs)].map((item) => item[1]),
+    ['Look Premium', 'Convert Clearly', 'Load Fast', 'Launch Clean', 'Keep Improving'],
+  );
+  assert.match(html, /<h1[^>]*>A website that reflects/);
+  assert.match(html, /href="\/contact"[^>]*>Send an inquiry/);
+  assert.match(html, /Case studies are not available here right now/);
+  assert.doesNotMatch(html, /Trusted by industry leaders|Partner logos?|<img\b|(?:["\s])opacity-0(?=["\s])|style="[^"]*opacity:\s*0(?:;|")/i);
+});
+
+test('Home keeps approved proof text when its image has no usable alt', async () => {
+  const Home = loadTs('app/(marketing)/page.tsx', {
+    '@/components/ui/button': displayMocks['@/components/ui/button'],
+    '@/lib/sanity/fetch': { getCaseStudies: async () => [{
+      slug: 'verified', title: 'Verified work', excerpt: 'Verified narrative', proofClassification: 'clientProject',
+      mainImage: { asset: { _ref: 'image-test-1920x1080-png' }, alt: '  ' },
+    }] },
+    '@/lib/sanity/image': { urlFor: () => assert.fail('unused media should not be resolved') },
+  }).default;
+  const html = renderToStaticMarkup(await Home());
+  assert.match(html, /href="\/work\/verified"/);
+  assert.match(html, /Verified narrative/);
+  assert.doesNotMatch(html, /<img\b/);
 });
 
 test('GTM is absent for missing, placeholder and malformed IDs', () => {

@@ -19,9 +19,7 @@ export default function ProjectCard({ project, className }: ProjectCardProps) {
       <div className="grid gap-0 md:grid-cols-[1.1fr_0.9fr]">
         <div className="bg-surface-container-low p-7">
           <p className="text-label-md uppercase text-primary-container">
-            {project.summary?.startsWith("Internal concept.") || project.excerpt?.startsWith("Internal concept.")
-              ? "Internal concept"
-              : project.category || (project.client ? "Client project" : "Internal concept")}
+            {project.proofClassification === "internalConcept" ? "Internal concept" : "Client project"}
           </p>
           <h3 className="mt-4 font-display text-2xl text-on-surface">{project.label || project.title || "Project"}</h3>
           <p className="mt-4 text-body-lg text-on-surface/72">{project.summary || project.excerpt || ""}</p>

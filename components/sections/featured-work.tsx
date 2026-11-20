@@ -1,68 +1,75 @@
-import ScrollReveal from "@/components/ui/scroll-reveal";
-import Button from "@/components/ui/button";
-import type { CaseStudy } from "@/types/sanity";
-import { cn } from "@/lib/utils";
+"use client";
 
-export default function FeaturedWork({
-  projects,
-}: {
-  projects: CaseStudy[];
-}) {
-  if (projects.length === 0) return null;
+import Image from "next/image";
+import Link from "next/link";
+import { useState } from "react";
+import { cn } from "@/lib/utils";
+import type { CaseStudy } from "@/types/sanity";
+
+type FeaturedProject = Pick<CaseStudy, "slug" | "title" | "excerpt" | "proofClassification"> & {
+  image?: { src: string; alt: string };
+};
+
+function ProjectRow({ project }: { project: FeaturedProject }) {
+  const { image, proofClassification, title, excerpt, slug } = project;
+  const [failedSrc, setFailedSrc] = useState<string>();
+  const visibleImage = image?.src === failedSrc ? undefined : image;
+  const classification = proofClassification === "internalConcept"
+    ? "Internal concept. Not commissioned client work."
+    : proofClassification === "clientProject" ? "Client project" : undefined;
 
   return (
-    <section id="work" className="bg-bg py-24 lg:py-32 border-t border-primary/5">
-      <div className="mx-auto max-w-7xl px-6 md:px-8">
-        <div className="mb-16 flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-end">
-          <ScrollReveal className="max-w-2xl">
-            <p className="mb-4 font-display text-sm font-bold uppercase tracking-widest text-accent">Work</p>
-            <h2 className="font-display text-section font-extrabold text-primary">
-              See the work in context.
-            </h2>
-          </ScrollReveal>
+    <article className="cp-grid items-center border-t border-outline pt-8">
+      {visibleImage && (
+        <Image
+          src={visibleImage.src}
+          alt={visibleImage.alt}
+          width={1920}
+          height={1080}
+          sizes="(min-width: 1440px) 843px, (min-width: 1024px) calc(66.67vw - 72px), (min-width: 640px) calc(100vw - 64px), calc(100vw - 40px)"
+          className="col-span-full h-auto w-full rounded-structural lg:col-span-8"
+          onError={() => setFailedSrc(visibleImage.src)}
+        />
+      )}
+      <div className={cn("col-span-full min-w-0", visibleImage && "lg:col-span-4")}>
+        {classification && (
+          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-primary">{classification}</p>
+        )}
+        <h3 className="wrap-break-word text-xl font-semibold lg:text-2xl">{title}</h3>
+        <p className="mt-4 max-w-[68ch] text-muted">{excerpt}</p>
+        <Link href={`/work/${slug}`} className="cp-text-link mt-3">
+          View project<span className="sr-only">: {title}</span>
+        </Link>
+      </div>
+    </article>
+  );
+}
 
-          <ScrollReveal stagger={200}>
-            <Button href="/work" variant="secondary" className="px-8">
-              View all work
-            </Button>
-          </ScrollReveal>
+export default function FeaturedWork({ projects }: { projects: FeaturedProject[] }) {
+  const hasProjects = projects.length > 0;
+
+  return (
+    <section id="work" className="cp-section border-t border-outline bg-bg" aria-labelledby="work-title">
+      <div className="cp-container">
+        <div className="cp-grid items-center">
+          <div className={cn("col-span-full", hasProjects ? "lg:col-span-8" : "lg:col-span-4")}>
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-primary">Work</p>
+            <h2 id="work-title" className="cp-heading-2">See the work in context.</h2>
+          </div>
+          {hasProjects ? (
+            <Link href="/work" className="cp-text-link col-span-full justify-self-start lg:col-span-4 lg:justify-self-end">View all work</Link>
+          ) : (
+            <div className="col-span-full lg:col-span-8">
+              <p className="max-w-[68ch] text-muted">Case studies are not available here right now. Tell us about the website you want to improve.</p>
+              <Link href="/contact" className="cp-text-link mt-2">Send an inquiry</Link>
+            </div>
+          )}
         </div>
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {projects.map((project, index) => (
-            <ScrollReveal
-              key={project.slug}
-              stagger={index * 150}
-              className={cn(
-                "group relative overflow-hidden rounded-structural bg-surface-2 p-8 lg:p-10 transition-all duration-300 hover:bg-surface-3",
-                index === 0 ? "lg:col-span-2" : "lg:col-span-1"
-              )}
-            >
-              <div className="flex flex-col h-full min-h-[240px]">
-                <div className="mb-4 inline-flex text-xs font-bold uppercase tracking-widest text-primary/40">
-                  {project.excerpt?.startsWith("Internal concept.") || !project.client ? "Internal concept" : "Client project"}
-                </div>
-
-                <h3 className="mb-4 font-display text-2xl font-bold text-primary lg:text-3xl">
-                  {project.title}
-                </h3>
-
-                <p className="mb-8 text-base font-medium leading-relaxed text-primary/65">
-                  {project.excerpt}
-                </p>
-
-                <div className="mt-auto">
-                   <Button href={`/work/${project.slug}`} variant="tertiary" className="text-accent font-bold">
-                     View project
-                   </Button>
-                </div>
-              </div>
-
-              {/* Subtle accent line */}
-              <div className="absolute bottom-0 left-0 h-1 w-0 bg-accent transition-all duration-500 group-hover:w-full" />
-            </ScrollReveal>
-          ))}
-        </div>
+        {hasProjects && (
+          <div className="mt-8 space-y-12">
+            {projects.map((project) => <ProjectRow key={project.slug} project={project} />)}
+          </div>
+        )}
       </div>
     </section>
   );

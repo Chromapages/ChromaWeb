@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-  /* Chromapages Redesign Tokens */
+  /* Precision Chroma v1.0 */
   --color-bg: #EFEFED;
   --color-surface: #EFEFED;
   --color-surface-lowest: #FFFFFF;
@@ -11,85 +11,174 @@
   --color-primary: #2C3892;
   --color-primary-container: #2C3892;
   --color-accent: #23698C;
+  --color-accent-pressed: #1F5F80;
+  --color-accent-bright: #51B4D9;
+  --color-focus: #6673E8;
   --color-ink: #0F1115;
   --color-on-surface: #0F1115;
   --color-on-primary: #FFFFFF;
   --color-outline: #D9DADC;
+  --color-control: var(--color-muted);
+  --color-muted: #5F636C;
+  --color-muted-dark: #B4B7BD;
+  --color-outline-dark: #353943;
+  --color-error: #B42318;
+  --color-success: #027A48;
   --color-surface-2: #E5E6F0;
   --color-surface-3: #DBDBEE;
 
-  /* Typography Scale */
-  --font-display: "Montserrat", ui-sans-serif, system-ui;
-  --font-body: "Inter", ui-sans-serif, system-ui;
-  
-  --text-hero: clamp(2.5rem, 1rem + 4vw, 5rem);
-  --text-section: clamp(1.5rem, 1.2rem + 1.25vw, 2.25rem);
-  --text-base: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
-  
-  --radius-structural: 1rem;
-  --radius-functional: 0.5rem;
+  --text-hero: clamp(2.5rem, 4.25vw, 4rem);
+  --text-section: clamp(2rem, 3.4vw, 3rem);
+  --text-base: 1rem;
+  --text-base--line-height: 1.6;
 
-  /* Shadows - Computed manually to avoid build issues */
-  --shadow-soft: 0 4px 24px -2px rgba(44, 56, 146, 0.08);
-  --shadow-glow: 0 0 0 1px rgba(35, 105, 140, 0.3), 0 8px 32px rgba(35, 105, 140, 0.12);
-  --shadow-glow-hover: 0 0 0 1.5px rgba(35, 105, 140, 0.4), 0 12px 48px rgba(35, 105, 140, 0.2);
+  --radius-functional: 0.5rem;
+  --radius-panel: 0.75rem;
+  --radius-structural: 1rem;
+}
+
+@theme inline {
+  --font-display: var(--font-montserrat, "Montserrat", ui-sans-serif, system-ui);
+  --font-body: var(--font-inter, "Inter", ui-sans-serif, system-ui);
 }
 
 @layer base {
-  html {
-    scroll-behavior: smooth;
-    -webkit-font-smoothing: antialiased;
-  }
-
   body {
     background-color: var(--color-bg);
     color: var(--color-ink);
-    font-family: var(--font-body);
+    font-family: var(--font-inter, "Inter", ui-sans-serif, system-ui);
+    font-size: 1rem;
     line-height: 1.6;
   }
 
-  h1, h2, h3, h4, .font-display {
-    font-family: var(--font-display);
+  h1, h2, h3, h4 {
+    font-family: var(--font-montserrat, "Montserrat", ui-sans-serif, system-ui);
+    text-wrap: balance;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--cp-focus, var(--color-focus));
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    color: var(--color-on-primary);
+    background: var(--color-primary);
   }
 }
 
-@utility glass-panel {
-  border: 1px solid rgba(35, 105, 140, 0.18);
-  background: rgba(239, 239, 237, 0.15);
-  backdrop-filter: blur(20px);
-  transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@utility glass-panel-accent {
-  @apply glass-panel;
-  box-shadow: var(--shadow-glow);
-  &:hover {
-    box-shadow: var(--shadow-glow-hover);
-    transform: translateY(-4px);
+@layer components {
+  .cp-container {
+    width: min(1280px, 100% - 2 * var(--cp-gutter, 20px));
+    margin-inline: auto;
   }
-}
 
-@utility nav-underline {
-  position: relative;
-  &::after {
-    content: "";
-    position: absolute;
-    bottom: -4px;
-    left: 0;
-    height: 2px;
-    width: 0;
-    background-color: var(--color-accent);
-    transition: all 0.3s ease;
+  .cp-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--cp-columns, 4), minmax(0, 1fr));
+    gap: var(--cp-gap, 16px);
   }
-  &:hover::after {
-    width: 100%;
-  }
-}
 
-@utility grid-dot-pattern {
-  background-image: radial-gradient(rgba(44, 56, 146, 0.05) 1px, transparent 1px);
-  background-size: 24px 24px;
-  opacity: 0.5;
+  .cp-section { padding-block: var(--cp-section-space, 56px); }
+  .cp-major { padding-block: var(--cp-major-space, 72px); }
+
+  .cp-heading-1 {
+    font-size: var(--text-hero);
+    font-weight: 800;
+    line-height: .98;
+    letter-spacing: -.04em;
+  }
+
+  .cp-heading-2 {
+    font-size: var(--text-section);
+    font-weight: 700;
+    line-height: 1.02;
+    letter-spacing: -.035em;
+  }
+
+  .cp-intro {
+    max-width: 68ch;
+    color: var(--cp-muted, var(--color-muted));
+    font-size: clamp(1.125rem, 1.4vw, 1.25rem);
+    line-height: 1.55;
+  }
+
+  .cp-text-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    color: var(--cp-link, var(--color-primary));
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 4px;
+  }
+
+  .cp-text-link:hover { text-decoration-thickness: 2px; }
+
+  .cp-dark {
+    --cp-focus: var(--color-accent-bright);
+    --cp-link: var(--color-accent-bright);
+    --cp-muted: var(--color-muted-dark);
+    background: var(--color-ink);
+    color: var(--color-bg);
+  }
+
+  @media (min-width: 40rem) {
+    :root {
+      --cp-gutter: 32px;
+      --cp-columns: 8;
+      --cp-gap: 24px;
+      --cp-section-space: 72px;
+      --cp-major-space: 96px;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    :root {
+      --cp-gutter: 48px;
+      --cp-columns: 12;
+      --cp-section-space: 96px;
+      --cp-major-space: 128px;
+    }
+
+    .cp-page-stack {
+      position: relative;
+      margin: 12px 12px 0 0;
+      padding: 32px;
+      border: 1px solid var(--color-outline);
+      border-radius: var(--radius-structural);
+      background: var(--color-surface-lowest);
+    }
+
+    .cp-page-stack::before,
+    .cp-page-stack::after {
+      position: absolute;
+      inset: -1px;
+      border: 1px solid var(--stack-color);
+      border-radius: inherit;
+      clip-path: polygon(0 0, 100% 0, 100% 100%, calc(100% - var(--stack-offset)) 100%, calc(100% - var(--stack-offset)) var(--stack-offset), 0 var(--stack-offset));
+      transform: translate(var(--stack-offset), calc(-1 * var(--stack-offset)));
+      pointer-events: none;
+      content: "";
+    }
+
+    .cp-page-stack::before {
+      --stack-offset: 6px;
+      --stack-color: var(--color-primary);
+    }
+
+    .cp-page-stack::after {
+      --stack-offset: 12px;
+      --stack-color: var(--color-accent);
+    }
+  }
+
+  @media (min-width: 90rem) {
+    :root {
+      --cp-gutter: 80px;
+      --cp-gap: 32px;
+    }
+  }
 }
 
 /* Reduced Motion */

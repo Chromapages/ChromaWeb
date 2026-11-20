@@ -1,78 +1,50 @@
-"use client";
+import Link from "next/link";
+import type { Service } from "@/types/sanity";
 
-import Button from "@/components/ui/button";
-import GlassServiceCard, { homepageServices } from "@/components/cards/glass-service-card";
-import ScrollReveal from "@/components/ui/scroll-reveal";
-import type { Service as SanityService } from "@/types/sanity";
-import type { ServiceItem } from "@/lib/site";
+const needs = [
+  "Your website no longer reflects your business",
+  "Your services are difficult to understand online",
+  "Visitors struggle to find the next step",
+  "You want a clear engagement before making changes",
+];
 
-type HomepageService = (typeof homepageServices)[number];
-
-type ServiceRowProps = {
-  service: ServiceItem | SanityService;
-};
-
-function ServiceRow({ service }: ServiceRowProps) {
-  const heading =
-    ("label" in service && service.label) ||
-    ("title" in service && service.title) ||
-    service.slug;
+export default function ServicesGrid({ items }: { items?: Service[] }) {
   return (
-    <article className="flex flex-col items-start rounded-structural border border-primary/5 bg-surface-2 p-8 transition-colors hover:bg-surface-3 lg:p-10">
-      <h3 className="mb-4 font-display text-2xl font-bold text-primary lg:text-3xl">
-        {heading}
-      </h3>
-      <p className="text-base font-medium leading-relaxed text-primary/65">
-        {service.summary}
-      </p>
-      {"slug" in service && service.slug && (
-        <Button href={`/services/${service.slug}`} variant="tertiary" className="mt-6">
-          Explore service
-        </Button>
-      )}
-    </article>
-  );
-}
+    <section id="services" className="cp-section bg-bg" aria-labelledby="services-title">
+      <div className="cp-container">
+        <p className="mb-3 text-xs font-semibold uppercase tracking-[0.08em] text-primary">How we can help</p>
+        <h2 id="services-title" className="cp-heading-2">Start with what your website needs to do.</h2>
+        <p className="cp-intro mt-6">
+          {items
+            ? "A new website, a focused landing page, or improvements to an existing site. Start with the problem you want to solve."
+            : "Make your services easier to understand, bring your presentation up to date, and give visitors a clear way to get in touch."}
+        </p>
 
-export default function ServicesGrid({
-  items = homepageServices,
-}: {
-  items?: HomepageService[] | ServiceItem[] | SanityService[];
-}) {
-  const isServiceRow = items.length > 0 && "slug" in items[0];
-
-  return (
-    <section id="services" className="bg-bg py-24 lg:py-32">
-      <div className="mx-auto max-w-7xl px-6 md:px-8">
-        <ScrollReveal className="max-w-3xl">
-          <p className="mb-4 font-display text-sm font-bold uppercase tracking-widest text-accent">
-            How we can help
-          </p>
-          <h2 className="mb-8 font-display text-section font-extrabold text-primary">
-            Start with what your website needs to do.
-          </h2>
-          <p className="mb-16 text-lg font-medium leading-relaxed text-primary/65">
-            A new website, a focused landing page, or improvements to an existing site. Start with the problem you want to solve.
-          </p>
-        </ScrollReveal>
-
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {items.map((service, index) => {
-            const key =
-              ("slug" in service && service.slug) ||
-              ("title" in service && (service as HomepageService).title) ||
-              String(index);
-            return (
-              <ScrollReveal key={key} stagger={index * 120}>
-                {isServiceRow ? (
-                  <ServiceRow service={service as SanityService} />
-                ) : (
-                  <GlassServiceCard service={service as HomepageService} />
-                )}
-              </ScrollReveal>
-            );
-          })}
-        </div>
+        {items ? (
+          <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {items.map((service) => {
+              const heading = service.label || service.title || service.slug;
+              return (
+                <article key={service.slug} className="flex flex-col items-start rounded-structural border border-outline bg-surface-lowest p-8">
+                  <h3 className="wrap-break-word text-xl font-semibold lg:text-2xl">{heading}</h3>
+                  <p className="mt-4 mb-6 text-muted">{service.summary}</p>
+                  {service.slug && (
+                    <Link href={`/services/${service.slug}`} className="cp-text-link mt-auto">
+                      Explore service<span className="sr-only">: {heading}</span>
+                    </Link>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        ) : (
+          <>
+            <ul role="list" className="mt-12 max-w-[68ch] list-none">
+              {needs.map((need) => <li key={need} className="border-t border-outline py-6">{need}</li>)}
+            </ul>
+            <Link href="/services" className="cp-text-link">View services</Link>
+          </>
+        )}
       </div>
     </section>
   );

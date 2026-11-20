@@ -2,8 +2,8 @@
 
 ## Current implemented intake contract
 
-`POST /api/intake` is the public Contact page endpoint. `/api/contact` below is a
-legacy endpoint with no current page caller. Intake accepts the existing request
+`POST /api/intake` is the public Contact page endpoint. The legacy `/api/contact`
+route was removed. Intake accepts the existing request
 schema (`name`, `email`, `requestType`, optional controlled `projectType` and
 `budgetRange`, `company`, `message`, empty `honeypot`). It returns:
 
@@ -17,6 +17,17 @@ schema (`name`, `email`, `requestType`, optional controlled `projectType` and
 No private issue URL or raw upstream diagnostic body is returned. No automatic retry
 is made; an acknowledgement loss can leave an accepted issue at the upstream service.
 See [repair handoff](repair-handoff.md) for actual checks and remaining delivery blockers.
+
+## Current CMS revalidation contract
+
+`POST /api/revalidate` requires a JSON `secret` matching the server-only
+`REVALIDATE_SECRET`, plus `path`, `paths`, or both (maximum 50 total). It accepts
+the core marketing routes and literal lowercase, hyphen-delimited `/services/`
+and `/work/` slugs. A valid batch returns `200` with `{ success: true, revalidated }`.
+Missing server configuration returns `503`, incorrect credentials return `401`,
+and an invalid path batch returns `400` without revalidating any path.
+
+The remaining sections are historical planning notes, not a list of live routes.
 
 ## Purpose
 This document defines the expected API surface for the Chromapages marketing website.

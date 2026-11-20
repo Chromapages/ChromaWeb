@@ -41,8 +41,9 @@ export default async function CaseStudyDetailPage({ params }: CaseStudyPageProps
   if (!project) notFound()
   const results = (Array.isArray(project.results) ? project.results : project.results ? [project.results] : [])
     .filter((result) => result.trim())
-  const isConcept = project.excerpt?.startsWith('Internal concept.') || !project.client
-  const classification = isConcept ? 'Internal concept' : 'Client project'
+  const classification = project.proofClassification === 'internalConcept' ? 'Internal concept' : 'Client project'
+  const { mainImage } = project
+  const alt = typeof mainImage?.alt === 'string' ? mainImage.alt.trim() : ''
 
   return (
     <>
@@ -54,13 +55,17 @@ export default async function CaseStudyDetailPage({ params }: CaseStudyPageProps
         secondaryAction={{ label: 'View all work', href: '/work', variant: 'secondary' }}
       />
 
-      {project.mainImage && (
+      {mainImage?.asset && alt ? (
         <section className="bg-surface py-10">
           <div className="mx-auto max-w-7xl px-6 md:px-8">
             <div className="relative aspect-video overflow-hidden rounded-structural shadow-elevated border border-outline/10">
               <Image
-                src={urlFor(project.mainImage).url()}
-                alt={project.title || project.label || 'Project Image'}
+                src={urlFor({
+                  asset: mainImage.asset,
+                  crop: mainImage.crop ?? undefined,
+                  hotspot: mainImage.hotspot ?? undefined,
+                }).url()}
+                alt={alt}
                 fill
                 sizes="(min-width: 1280px) 1216px, (min-width: 768px) calc(100vw - 64px), calc(100vw - 48px)"
                 className="object-cover"
@@ -69,7 +74,7 @@ export default async function CaseStudyDetailPage({ params }: CaseStudyPageProps
             </div>
           </div>
         </section>
-      )}
+      ) : null}
 
       <section className="bg-surface py-20 lg:py-32">
         <div className="mx-auto max-w-7xl px-6 md:px-8">

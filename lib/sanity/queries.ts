@@ -1,23 +1,5 @@
 import { groq } from 'next-sanity'
 
-export const homePageQuery = groq`*[_type == "siteSettings"][0]{
-  title,
-  description,
-  hero{
-    headline,
-    subheadline,
-    ctaText,
-    ctaLink,
-    bgImage
-  },
-  featuredProjects[]->{
-    title,
-    slug,
-    mainImage,
-    excerpt
-  }
-}`
-
 export const servicesQuery = groq`*[_type == "service"] | order(orderRank asc){
   title,
   "slug": slug.current,
@@ -40,6 +22,7 @@ export const serviceBySlugQuery = groq`*[_type == "service" && slug.current == $
 
 // Approval covers the narrative and any optional results; never publish placeholder proof.
 const approvedCaseStudy = groq`_type == "caseStudy" && proofStatus == "approved"
+  && proofClassification in ["internalConcept", "clientProject"]
   && length(slug.current) > 0 && length(title) > 0 && length(excerpt) > 0
   && length(pt::text(content)) > 0`
 
@@ -47,7 +30,8 @@ export const caseStudiesQuery = groq`*[${approvedCaseStudy}] | order(publishedAt
   title,
   "slug": slug.current,
   client,
-  mainImage,
+  proofClassification,
+  mainImage{asset, crop, hotspot, alt},
   excerpt,
   tags
 }`
@@ -57,19 +41,17 @@ export const projectBySlugQuery = groq`*[${approvedCaseStudy} && slug.current ==
   "slug": slug.current,
   excerpt,
   client,
-  mainImage,
+  proofClassification,
+  mainImage{asset, crop, hotspot, alt},
   content,
   results,
   tags
 }`
 
 export const navigationQuery = groq`*[_type == "navigation"][0]{
-  items[]{
+  items[length(path) > 0]{
     label,
-    "path": select(
-      _type == "reference" => @->slug.current,
-      path != "" => path
-    )
+    "href": path
   }
 }`
 
@@ -86,10 +68,4 @@ export const pricingServicesQuery = groq`*[_type == "service"] | order(orderRank
   framing,
   ctaText,
   ctaLink
-}`
-
-export const partnersQuery = groq`*[_type == "partner"] | order(orderRank asc){
-  name,
-  logo,
-  website
 }`

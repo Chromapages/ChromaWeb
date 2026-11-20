@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -13,7 +13,6 @@ import {
   Mail,
   RefreshCw,
   Clock,
-  Briefcase,
   Layers,
   HelpCircle,
 } from "lucide-react";
@@ -43,7 +42,7 @@ export default function AdminDashboardPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | "inbox" | "active" | "in_review" | "done">("all");
   const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
 
-  const fetchRequests = async (showLoadingState = true) => {
+  const fetchRequests = useCallback(async (showLoadingState = true) => {
     if (showLoadingState) setIsLoading(true);
     setError(null);
 
@@ -68,11 +67,11 @@ export default function AdminDashboardPage() {
       setIsLoading(false);
       setIsRefreshing(false);
     }
-  };
+  }, [router]);
 
   useEffect(() => {
-    fetchRequests();
-  }, [router]);
+    void fetchRequests();
+  }, [fetchRequests]);
 
   const handleRefreshClick = () => {
     setIsRefreshing(true);
@@ -295,11 +294,14 @@ export default function AdminDashboardPage() {
                 });
 
                 return (
-                  <div
+                  <button
                     key={issue.id}
+                    type="button"
+                    aria-label={`${issue.identifier}: ${issue.title}`}
+                    aria-pressed={isSelected}
                     onClick={() => setSelectedIssueId(issue.id)}
                     className={clsx(
-                      "relative p-5 rounded-2xl border transition duration-200 cursor-pointer group hover:translate-y-[-1px]",
+                      "relative block w-full rounded-2xl border p-5 text-left transition duration-200 cursor-pointer group hover:translate-y-[-1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400",
                       isSelected
                         ? "bg-slate-900/80 border-indigo-500/40 shadow-lg shadow-indigo-950/25"
                         : "bg-slate-900/30 border-slate-900 hover:border-slate-850 hover:bg-slate-900/50"
@@ -307,20 +309,20 @@ export default function AdminDashboardPage() {
                   >
                     {/* Glow effect for selection */}
                     {isSelected && (
-                      <div className="absolute -inset-px rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 opacity-10 blur-sm"></div>
+                      <span aria-hidden="true" className="absolute -inset-px rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 opacity-10 blur-sm" />
                     )}
 
-                    <div className="relative flex justify-between items-start gap-4">
-                      <div className="space-y-2.5">
+                    <span className="relative flex justify-between items-start gap-4">
+                      <span className="min-w-0 space-y-2.5">
                         <span className="text-xs font-mono font-semibold text-indigo-400 tracking-wider">
                           {issue.identifier}
                         </span>
-                        <h3 className="text-sm font-semibold text-white group-hover:text-indigo-300 transition duration-150 line-clamp-1">
+                        <span className="text-sm font-semibold text-white group-hover:text-indigo-300 transition duration-150 line-clamp-1">
                           {issue.title}
-                        </h3>
+                        </span>
 
                         {/* Badges */}
-                        <div className="flex flex-wrap gap-1.5">
+                        <span className="flex flex-wrap gap-1.5">
                           <span
                             className={clsx(
                               "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border",
@@ -346,15 +348,15 @@ export default function AdminDashboardPage() {
                             }
                             return null;
                           })}
-                        </div>
-                      </div>
+                        </span>
+                      </span>
 
-                      <div className="text-right space-y-1">
+                      <span className="shrink-0 text-right space-y-1">
                         <span className="text-xs text-slate-500 block">{formattedDate}</span>
                         <span className="text-xs text-slate-500 block font-mono">{issue.state.name}</span>
-                      </div>
-                    </div>
-                  </div>
+                      </span>
+                    </span>
+                  </button>
                 );
               })
             )}

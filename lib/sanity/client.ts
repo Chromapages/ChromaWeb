@@ -13,14 +13,3 @@ export const client = projectId
       perspective: 'published',
     })
   : null
-
-export const previewClient = projectId
-  ? createClient({
-      projectId,
-      dataset,
-      apiVersion,
-      useCdn: false,
-      perspective: 'previewDrafts',
-      token: process.env.SANITY_API_READ_TOKEN,
-    })
-  : null
