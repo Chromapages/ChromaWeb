@@ -28,11 +28,10 @@ export async function getNavigation(): Promise<NavigationItem[]> {
 }
 
 export async function getServices(): Promise<Service[]> {
-  if (!client) return staticServices as unknown as Service[]
+  if (!client) return staticServices
   try {
-    const data = await client.fetch(servicesQuery)
-    if (!data) throw new Error('No services found')
-    return data
+    const data = await client.fetch<Service[]>(servicesQuery)
+    return data?.length ? data : staticServices
   } catch (error) {
     console.warn('Failed to fetch services from Sanity, falling back to static data', error)
     return staticServices
@@ -74,11 +73,10 @@ export async function getCaseStudyBySlug(slug: string): Promise<CaseStudy | null
 }
 
 export async function getProcessSteps(): Promise<ProcessStep[]> {
-  if (!client) return staticProcessSteps as unknown as ProcessStep[]
+  if (!client) return staticProcessSteps
   try {
-    const data = await client.fetch(processStepsQuery)
-    if (!data) throw new Error('No process steps found')
-    return data
+    const data = await client.fetch<ProcessStep[]>(processStepsQuery)
+    return data?.length ? data : staticProcessSteps
   } catch (error) {
     console.warn('Failed to fetch process steps from Sanity, falling back to static data', error)
     return staticProcessSteps

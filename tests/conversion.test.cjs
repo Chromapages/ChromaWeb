@@ -168,6 +168,8 @@ test('only Studio routes receive the Sanity content security policy', async () =
     for (const host of ['api.sanity.io', 'cdn.sanity.io', 'synthetic-cms.api.sanity.io', 'synthetic-cms.apicdn.sanity.io']) {
       assert.equal(connections.includes(`https://${host}`), studio, `${path}: ${host}`);
     }
+    const scripts = policy.split('; ').find((directive) => directive.startsWith('script-src ')).split(' ');
+    assert.equal(scripts.includes('https://core.sanity-cdn.com'), studio, path);
     if (!studio) assert.doesNotMatch(policy, /sanity\.io/);
   }
 });
@@ -183,6 +185,18 @@ test('pricing fallback uses existing offers in missing, failed and empty CMS sta
     './client': { client: { fetch: async () => cmsOffers } }, 'next-sanity': { groq },
   });
   assert.deepEqual(await getPricingServices(), cmsOffers);
+});
+
+test('empty CMS uses approved services and process steps without substituting case studies', async () => {
+  const { services, processSteps } = loadTs('lib/site.ts');
+  const { getServices, getProcessSteps, getCaseStudies, getCaseStudyBySlug } = loadTs('lib/sanity/fetch.ts', {
+    './client': { client: { fetch: (source, params) => query(source, [], params) } },
+    'next-sanity': { groq },
+  });
+  assert.deepEqual(await getServices(), services);
+  assert.deepEqual(await getProcessSteps(), processSteps);
+  assert.deepEqual(await getCaseStudies(), []);
+  assert.equal(await getCaseStudyBySlug('service-site-refresh'), null);
 });
 
 test('proof card follows explicit classification and omits invented results', () => {

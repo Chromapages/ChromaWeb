@@ -1,7 +1,14 @@
+import type { Viewport } from 'next'
+
 export const metadata = {
   title: 'Sanity Studio',
-  viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
   robots: 'noindex',
+}
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 }
 
 export default function AdminLayout({
@@ -9,9 +16,5 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode
 }) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  )
+  return children
 }
