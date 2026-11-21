@@ -35,25 +35,31 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-## Cloudflare Worker (intake) Deployment
+## Request intake
 
-For the current implementation, configuration dependencies, known Worker defects,
-verification evidence, and rollback/QA steps, read the
-[Nadia → Quinn conversion repair handoff](docs/repair-handoff.md). The deployment
-instructions below are reference material; this repair did not deploy or verify
-the operational Worker.
+The `/contact` form posts to Next.js at `/api/intake`. Next.js validates the
+submission and forwards it to the in-repo [intake Worker](workers/intake-worker/),
+which stores the request in Cloudflare D1. A successful response includes a public
+`reference` for the receipt; that reference does not grant access to the request
+or mean that anyone has reviewed it. The session-protected `/portal-admin` reads
+requests and updates status or notes through server-side Next.js routes.
 
-The site forwards form submissions to a Cloudflare Worker that creates Linear issues and routes them to the local `cmd/intake` dispatcher. The Worker is **not** part of this repo — it lives outside the project root.
+Set `WORKER_URL` to the Worker's HTTPS root and `WORKER_SECRET` to the same
+value as the Worker's `INTAKE_SECRET`. Keep both Next.js variables server-only
+(no `NEXT_PUBLIC_` prefix); never put a secret in a URL, client bundle, or logs.
+D1 retains contact details, messages, and admin notes, so restrict access and set
+retention and deletion procedures before accepting real requests. Use synthetic
+submissions for local checks; do not send private fields or references to analytics.
 
-- **Worker location:** `D:\claude-bridge-sandbox\intake-worker\` (Windows path; lives on the D: drive, not in the F: drive project)
-- **Deploy command:** from that directory, run `wrangler deploy`
-- **Required secrets** (set via `wrangler secret put <NAME>`):
-  - `LINEAR_API_KEY`
-  - `LINEAR_TEAM_ID`
-  - `PATH_SECRET`
-  - `INTAKE_FORMS`
-  - `DEFAULT_LABELS` (JSON array, e.g. `["intake/web","cmd/intake"]`)
-- **After deploy**, copy the printed Worker URL (e.g. `https://intake-worker.<account>.workers.dev`) into `WORKER_URL` in this project's `.env.local`.
-- **Full step-by-step:** see `D:\claude-bridge-sandbox\intake-worker\DEPLOY.md`.
+For the local-only Worker check (in-memory SQLite, no Cloudflare connection):
 
-The local dispatcher on the dev machine reads Linear issues tagged `cmd/intake` on its tick and runs the intake handler to classify and re-route them.
+```bash
+cd workers/intake-worker
+node --test worker.test.mjs
+```
+
+Phase 7A-1 is local/offline only. The test is not a deployment or evidence of
+production delivery. Do not provision remote resources or deploy without separate
+Gate 7B approval; use the [deployment runbook](workers/intake-worker/DEPLOY.md)
+once approved. See the [repair handoff](docs/repair-handoff.md) for the runtime
+contract and verification boundaries.

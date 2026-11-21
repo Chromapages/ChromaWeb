@@ -1,16 +1,42 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
+import { fetchIntakeWorker, intakeWorkerErrorStatus } from "@/lib/intake-worker";
 import { requestSchema } from "@/lib/validation/request";
 
 const workerAcceptanceSchema = z.object({
   ok: z.literal(true),
-  issueId: z.string().trim().min(1),
-  issueIdentifier: z.string().trim().min(1),
-  issueUrl: z.string().url(),
+  id: z.uuid(),
+  reference: z.string().trim().min(1),
+  createdAt: z.iso.datetime(),
 });
 
+const maxBodyBytes = 32 * 1024;
+const payloadTooLarge = () =>
+  NextResponse.json({ success: false, message: "Request body exceeds 32 KiB." }, { status: 413 });
+
 export const POST = async (request: Request) => {
-  const payload = await request.json().catch(() => null);
+  if (Number(request.headers.get("content-length")) > maxBodyBytes) return payloadTooLarge();
+
+  let payload: unknown = null;
+  try {
+    const reader = request.body?.getReader();
+    const decoder = new TextDecoder();
+    let bytes = 0;
+    let text = "";
+    while (reader) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      bytes += value.byteLength;
+      if (bytes > maxBodyBytes) {
+        void reader.cancel().catch(() => {});
+        return payloadTooLarge();
+      }
+      text += decoder.decode(value, { stream: true });
+    }
+    payload = JSON.parse(text + decoder.decode());
+  } catch {
+    // Malformed or unreadable JSON is rejected by the schema below.
+  }
   const parsed = requestSchema.safeParse(payload);
 
   if (!parsed.success) {
@@ -24,7 +50,8 @@ export const POST = async (request: Request) => {
     );
   }
 
-  if (parsed.data.honeypot) {
+  const { honeypot, ...submission } = parsed.data;
+  if (honeypot) {
     return NextResponse.json(
       {
         success: false,
@@ -34,65 +61,20 @@ export const POST = async (request: Request) => {
     );
   }
 
-  const workerUrl = process.env.WORKER_URL;
-  const pathSecret = process.env.PATH_SECRET;
-
-  let targetUrl: URL;
   try {
-    if (!workerUrl || !pathSecret) throw new Error("Missing configuration");
-    targetUrl = new URL(`${workerUrl.replace(/\/$/, "")}/${encodeURIComponent(pathSecret)}`);
-    if (targetUrl.protocol !== "https:" || targetUrl.username || targetUrl.password || targetUrl.search || targetUrl.hash) {
-      throw new Error("Invalid configuration");
-    }
-  } catch {
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Server configuration error. Please try again later.",
-      },
-      { status: 503 },
-    );
-  }
-
-  // The Worker owner must configure routing; source version 0.1.0 ignores payload labels.
-  const workerPayload = {
-    formId: "chromaweb-portal",
-    formName: "ChromaWeb Request Portal",
-    submittedAt: new Date().toISOString(),
-    fields: {
-      name: parsed.data.name,
-      email: parsed.data.email,
-      company: parsed.data.company || "N/A",
-      requestType: parsed.data.requestType,
-      projectType: parsed.data.projectType || "N/A",
-      budgetRange: parsed.data.budgetRange || "N/A",
-      message: parsed.data.message,
-    },
-    labels: ["intake/web", "cmd/intake"],
-  };
-
-  try {
-    const response = await fetch(targetUrl, {
+    const response = await fetchIntakeWorker("/requests", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(workerPayload),
-      signal: AbortSignal.timeout(10_000),
-      redirect: "error",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(submission),
     });
-
-    if (!response.ok) {
+    if (response.status !== 201) {
       return NextResponse.json(
-        {
-          success: false,
-          message: "Failed to forward request to dispatch queue.",
-        },
+        { success: false, message: "The intake service did not confirm acceptance. Please try again later." },
         { status: 502 },
       );
     }
 
-    const accepted = workerAcceptanceSchema.safeParse(await response.json().catch(() => null));
+    const accepted = workerAcceptanceSchema.safeParse(await response.json());
     if (!accepted.success) {
       return NextResponse.json(
         { success: false, message: "The intake service did not confirm acceptance. Please try again later." },
@@ -102,16 +84,18 @@ export const POST = async (request: Request) => {
     return NextResponse.json({
       success: true,
       message: "Request received successfully.",
-      issueIdentifier: accepted.data.issueIdentifier,
+      reference: accepted.data.reference,
     });
   } catch (error) {
-    const timedOut = error instanceof Error && (error.name === "TimeoutError" || error.name === "AbortError");
+    const status = intakeWorkerErrorStatus(error);
     return NextResponse.json(
       {
         success: false,
-        message: "Acceptance could not be confirmed. Your information has been kept; please try again later.",
+        message: status === 503
+          ? "The intake service is temporarily unavailable. Please try again later."
+          : "Acceptance could not be confirmed. Your information has been kept; please try again later.",
       },
-      { status: timedOut ? 504 : 502 },
+      { status },
     );
   }
 };

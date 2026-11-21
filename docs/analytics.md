@@ -22,18 +22,18 @@ The **implemented and tested camelCase contract is canonical**. The `snake_case`
 
 Every event is pushed as `{ event: <name>, name: <name>, ...parameters }`. The payload always contains the `event` key GTM triggers on, and also a duplicate `name` key.
 
-**Privacy rule (unchanged):** never send names, email addresses, company names, freeform message text, ticket identifiers/URLs (`issueIdentifier`/`issueUrl`), or secrets to analytics. The tests assert that `form_submit` carries none of these.
+**Privacy rule:** never send names, email addresses, company names, freeform messages, admin notes, request IDs, receipt references, or credentials to analytics. The conversion tests check that `form_submit` omits private form fields and the reference. See the [API spec](api-spec.md) for the separate server-side intake and admin contracts.
 
 ### 0.3 Event taxonomy — separate the four stages
 
 | Stage | Business meaning | Event | Fires when | Implemented |
 |---|---|---|---|---|
 | **CTA click** | Intent signal, **not** a conversion | `click_cta` | A tracked `Button`/link with an `analyticsLabel` is clicked | Yes |
-| **Accepted inquiry** | The intake Worker accepted the submission and returned a ticket | `form_submit` | Only after `intakeResponseSchema` confirms `{ success:true, issueIdentifier }` | Yes |
+| **Accepted inquiry** | The intake Worker stored the request in D1 and Next.js returned a receipt | `form_submit` | Only after `intakeResponseSchema` confirms `{ success: true, reference }` | Yes |
 | **Qualified lead** | A human/system judged the inquiry a fit | *(no website event)* | Not a page event — belongs to qualification (Chroma lead scoring / human review) | No — do not fabricate as a web event |
 | **Actual booking** | A scheduled call exists | `booking_complete` | A scheduler redirect/webhook confirms a booking | No — **no scheduler is wired** (`site.bookingHref = "/contact"`) |
 
-Keeping these distinct prevents three common reporting errors: counting a CTA click as a lead, counting an accepted ticket as a qualified lead, and counting a click on "Book A Call" (which currently opens the contact page) as a completed booking.
+Keeping these distinct prevents three common reporting errors: counting a CTA click as a lead, counting a stored request as a qualified lead, and counting a click on "Book A Call" (which currently opens the contact page) as a completed booking.
 
 ### 0.4 Implemented events (exact contract)
 
@@ -41,7 +41,7 @@ Keeping these distinct prevents three common reporting errors: counting a CTA cl
 |---|---|---|
 | `click_cta` | `event`, `name="click_cta"`, `label`, `location`, `destination` (link buttons only), `pagePath`, `pageType` (`"home"` \| `"marketing"`) | Any `Button` with an `analyticsLabel`. A `Button` **without** `analyticsLabel` emits nothing (see §0.5). |
 | `form_start` | `event`, `name="form_start"`, `location="request-form"`, `pagePath`, `pageType="request"` | First focus inside the request form; guarded to fire once per mount. |
-| `form_submit` | `event`, `name="form_submit"`, `location="request-form"`, `pagePath`, `pageType="request"`, `projectType` (prospect tab only), `budgetRange` (prospect tab, when provided) | Only after the Worker confirms acceptance. No PII, no ticket ID. |
+| `form_submit` | `event`, `name="form_submit"`, `location="request-form"`, `pagePath`, `pageType="request"` | Only after a validated intake receipt. No PII or receipt reference. |
 | `faq_expand` | `event`, `name="faq_expand"`, `location="faq"`, `label=<question>` | FAQ item toggled (fires on **open and close**; no `pagePath`/`pageType`). Currently only on `/pricing`. |
 
 Observed `location` values in use: `header`, `hero`, `homepage-bottom`, `pricing-snapshot`, `project-card`, `service-card` (dead component), `not-found`, `contact-page`.
@@ -81,7 +81,7 @@ Notes: `view_page` is normally served by GA4 page-view measurement; the other `v
 ### 0.9 Unresolved dependencies (measurement)
 
 1. **Valid GTM container ID + GA4 property** (Unknown) — nothing is measured without these.
-2. **Verified intake delivery** — `form_submit` proves acceptance, not that the ticket reached the intended destination or dispatcher; that remains unverified per `docs/repair-handoff.md`.
+2. **Verified intake delivery** — `form_submit` means the configured Worker returned a confirmed D1 receipt. It does not prove human review or qualification. Preview and production delivery still require separate verification per [repair handoff](repair-handoff.md).
 3. **Scheduler decision** — blocks real booking measurement.
 4. **Qualification source of truth** — the site intentionally has no "qualified lead" event; CRM/qualification reporting must own it.
 5. **Attribution capture** — no UTM/`source` field exists in the intake schema today.
@@ -178,7 +178,7 @@ These are supporting indicators of purchase intent.
 
 ## 5. Event Definitions
 
-> **Superseded for parameter names.** The parameter names below (`cta_label`, `page_path`, etc.) are illustrative planning examples. The canonical, implemented contract is the camelCase one ratified in §0.2–§0.4. Use camelCase (`event`, `name`, `label`, `location`, `destination`, `pagePath`, `pageType`, `projectType`, `budgetRange`) and the four implemented events (`click_cta`, `form_start`, `form_submit`, `faq_expand`). Events in this section marked "Recommended" but absent from §0.4 are not yet implemented.
+> The camelCase contract in §0.2–§0.4 is canonical. Other parameter names below are illustrative planning examples. Events absent from §0.4 are not implemented.
 
 ## `view_page`
 ### Trigger
@@ -270,17 +270,11 @@ Shows intent even when the user does not submit.
 
 ## `form_submit`
 ### Trigger
-Successful contact form submission
+The Contact form receives a validated D1 receipt from `POST /api/intake`.
 
 ### Parameters
-- `form_id`
-- `page_path`
-- `project_type`
-- `budget_range` if appropriate and privacy-safe
-- `timeline` if appropriate and privacy-safe
-
-### Note
-Do not send sensitive freeform message content to analytics.
+See the exact `form_submit` payload in §0.4. Do not include the receipt reference
+or any submission data.
 
 ### Why It Matters
 This is a primary conversion event.
@@ -357,10 +351,10 @@ window.dataLayer.push({
 window.dataLayer = window.dataLayer || [];
 window.dataLayer.push({
   event: "form_submit",
-  form_id: "contact_form",
-  page_path: "/contact",
-  page_type: "contact",
-  project_type: "Marketing Website"
+  name: "form_submit",
+  location: "request-form",
+  pagePath: "/contact",
+  pageType: "request"
 });
 ```
 

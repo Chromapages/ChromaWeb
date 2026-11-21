@@ -158,12 +158,15 @@ test('proxy and requests endpoint await validation and reject invalid sessions',
   request.nextUrl.pathname = '/portal-admin/login';
   assert.deepEqual(await proxy.proxy(request), { redirect: '/portal-admin' });
   session.isValidSessionToken = async () => false;
-  const route = loadTs('app/api/admin/requests/route.ts', {
-    'next/server': nextServer,
+  const mocks = {
+    'server-only': {},
     'next/headers': { cookies: async () => request.cookies },
     '@/lib/admin-session': session,
-  });
-  assert.equal((await route.GET()).status, 401);
+  };
+  const list = loadTs('app/api/admin/requests/route.ts', mocks);
+  const update = loadTs('app/api/admin/requests/[id]/route.ts', mocks);
+  assert.equal((await list.GET()).status, 401);
+  assert.equal((await update.PATCH(updateRequest({ status: 'done' }), updateContext())).status, 401);
 });
 
 test('login issues no cookie if durable session creation fails', async (t) => {
@@ -198,25 +201,90 @@ test('login issues no cookie if durable session creation fails', async (t) => {
   assert.equal(success.cookies.get('admin').httpOnly, true);
 });
 
-test('authenticated requests require an explicit Linear destination', async (t) => {
-  const previousEnv = { ...process.env };
-  const previousFetch = global.fetch;
-  t.after(() => { process.env = previousEnv; global.fetch = previousFetch; });
+const storedRequest = {
+  id: '350eff2e-95d8-4239-a37d-5f76e07ea29d', reference: 'REQ-0001', status: 'new', requestType: 'prospect',
+  name: 'Offline Example', email: 'offline@example.invalid', company: '', projectType: '', budgetRange: '',
+  message: 'A synthetic inquiry.', notes: '',
+  createdAt: '2026-11-21T10:00:00.000Z', updatedAt: '2026-11-21T10:00:00.000Z',
+};
+const updateContext = (id = storedRequest.id) => ({ params: Promise.resolve({ id }) });
+const updateRequest = (data) => new Request(`https://site.invalid/api/admin/requests/${storedRequest.id}`, {
+  method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data),
+});
+
+function authenticatedRoutes(t) {
+  const previous = { ...process.env };
+  t.after(() => { process.env = previous; });
+  process.env.WORKER_URL = 'https://worker.invalid/';
+  process.env.WORKER_SECRET = 'offline-worker-token';
   const mocks = {
-    'next/server': nextServer,
+    'server-only': {},
     'next/headers': { cookies: async () => ({ get: () => ({ value: 'opaque-token' }) }) },
-    '@/lib/admin-session': { SESSION_COOKIE: 'admin', isValidSessionToken: async () => true },
+    '@/lib/admin-session': { SESSION_COOKIE: 'admin', isValidSessionToken: async (value) => value === 'opaque-token' },
   };
-  process.env.LINEAR_API_KEY = 'local-test-only';
-  delete process.env.LINEAR_TEAM_ID;
-  global.fetch = () => assert.fail('No implicit team destination is allowed');
-  assert.equal((await loadTs('app/api/admin/requests/route.ts', mocks).GET()).status, 503);
-  process.env.LINEAR_TEAM_ID = 'explicit-test-team';
-  global.fetch = async (_url, options) => {
-    assert.equal(JSON.parse(options.body).variables.teamId, 'explicit-test-team');
-    return Response.json({ data: { issues: { nodes: [] } } });
+  return {
+    GET: loadTs('app/api/admin/requests/route.ts', mocks).GET,
+    PATCH: loadTs('app/api/admin/requests/[id]/route.ts', mocks).PATCH,
   };
-  const response = await loadTs('app/api/admin/requests/route.ts', mocks).GET();
+}
+
+test('authenticated request list requires Worker config and verifies the returned records', async (t) => {
+  const { GET } = authenticatedRoutes(t);
+  let reply = { ok: true, requests: [{ ...storedRequest, internal: 'not returned' }] };
+  const fetchMock = t.mock.method(global, 'fetch', async (url, options) => {
+    assert.equal(url, 'https://worker.invalid/requests');
+    assert.equal(options.method, 'GET');
+    assert.equal(options.headers.get('authorization'), 'Bearer offline-worker-token');
+    assert.equal(options.cache, 'no-store');
+    return Response.json(reply);
+  });
+  delete process.env.WORKER_SECRET;
+  assert.equal((await GET()).status, 503);
+  assert.equal(fetchMock.mock.callCount(), 0);
+  process.env.WORKER_SECRET = 'offline-worker-token';
+  const response = await GET();
   assert.equal(response.status, 200);
-  assert.deepEqual((await response.json()).issues, []);
+  assert.equal(response.headers.get('cache-control'), 'no-store');
+  assert.deepEqual(await response.json(), { success: true, requests: [storedRequest] });
+  reply = { ok: true, requests: [{ ...storedRequest, status: 'unknown' }] };
+  assert.equal((await GET()).status, 502);
+});
+
+test('authenticated PATCH validates id/fields and maps Worker errors without exposing them', async (t) => {
+  const { PATCH } = authenticatedRoutes(t);
+  const changes = { status: 'in_review', notes: '  QA\nreviewed ✓  ' };
+  const updated = { ...storedRequest, ...changes, updatedAt: '2026-11-21T11:20:00.000Z' };
+  let respond = () => Response.json({ ok: true, request: updated });
+  const fetchMock = t.mock.method(global, 'fetch', async (url, options) => {
+    assert.equal(url, `https://worker.invalid/requests/${storedRequest.id}`);
+    assert.equal(options.method, 'PATCH');
+    assert.equal(options.headers.get('authorization'), 'Bearer offline-worker-token');
+    assert.deepEqual(JSON.parse(options.body), changes);
+    return respond();
+  });
+  for (const body of [{}, { status: 'invalid' }, { notes: 'x'.repeat(5001) }, { ...changes, email: 'not-allowed' }]) {
+    assert.equal((await PATCH(updateRequest(body), updateContext())).status, 400);
+  }
+  assert.equal((await PATCH(updateRequest(changes), updateContext('../alternate'))).status, 400);
+  delete process.env.WORKER_SECRET;
+  assert.equal((await PATCH(updateRequest(changes), updateContext())).status, 503);
+  assert.equal(fetchMock.mock.callCount(), 0);
+  process.env.WORKER_SECRET = 'offline-worker-token';
+  const accepted = await PATCH(updateRequest(changes), updateContext());
+  assert.equal(accepted.status, 200);
+  assert.deepEqual(await accepted.json(), { success: true, request: updated });
+  const uppercase = await PATCH(updateRequest(changes), updateContext(storedRequest.id.toUpperCase()));
+  assert.equal(uppercase.status, 200);
+  assert.deepEqual(await uppercase.json(), { success: true, request: updated });
+  for (const [status, reply] of [
+    [404, () => new Response('private upstream diagnostic', { status: 404 })],
+    [502, () => Response.json({ ok: true, request: { ...updated, requestType: 'unknown' } })],
+    [502, () => Response.json({ ok: true, request: { ...updated, id: '64ceca7b-3684-43d7-8791-591a55e8de75' } })],
+    [504, () => { throw new DOMException('private upstream diagnostic', 'TimeoutError'); }],
+  ]) {
+    respond = reply;
+    const response = await PATCH(updateRequest(changes), updateContext());
+    assert.equal(response.status, status);
+    assert.doesNotMatch(await response.text(), /private upstream diagnostic/);
+  }
 });

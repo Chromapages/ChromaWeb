@@ -15,6 +15,7 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     "**/._*",
     "claude-bridge-sandbox/**",
+    "workers/**",
   ]),
   eslintConfigPrettier,
   {

@@ -1,5 +1,9 @@
 # Conversion journey repair — Nadia → Quinn
 
+The intake sections describe the Phase 7A-1 local cutover. The dated conversion
+repair evidence below is historical; it does not verify this cutover or any
+remote deployment.
+
 ## Authorized approach
 
 Repair evidenced contracts in the existing App Router application. Preserve offer text,
@@ -15,11 +19,12 @@ is launch-critical and authorized the recommended shared session implementation.
    Files: `lib/sanity/{queries,fetch}.ts`,
    `sanity/schemaTypes/caseStudy.ts`, marketing home/Work pages, Hero,
    FeaturedWork, ProjectCard, and RichText.
-2. Reuse the request schema at `/api/intake`. Validate the actual Worker's acceptance
-   response, bound network waiting, and avoid logging upstream bodies or secret URLs.
-   Retain form values and expose persistent errors on rejected, malformed, or failed
-   responses. Callers: `components/forms/request-form.tsx`,
-   `lib/validation/request.ts`, `app/api/intake/route.ts`.
+2. Validate public requests at `/api/intake`, then write through the in-repo D1
+   Worker. Validate the Worker's receipt before showing success, bound network
+   waiting, and keep private data out of logs and analytics. Retain form values
+   on rejected, malformed, or failed responses.
+   Callers: `components/forms/request-form.tsx`, `lib/validation/request.ts`,
+   `app/api/intake/route.ts`.
 3. Replace process-local admin sessions with expiring hashed-token documents in the
    existing Sanity project. Validate on every protected route/API and delete on logout.
    Missing configuration/storage failures fail closed. Files: session helper, route
@@ -32,8 +37,9 @@ is launch-critical and authorized the recommended shared session implementation.
 
 ## Boundaries and risks
 
-- No deployment, production configuration changes, dependency additions, scheduler,
-  new auth platform, or external Worker edits.
+- Phase 7A-1 does not authorize remote provisioning or deployment. Use the
+  [intake deployment runbook](../workers/intake-worker/DEPLOY.md) only after
+  separate Gate 7B approval.
 - Marcus's concurrently added `docs/design-review/` studies are explicitly provisional
   for Sloane's review. They were read and left untouched. Their identity/token and
   layout proposals are not treated as implementation approval. Dax-approved proof/
@@ -43,26 +49,50 @@ is launch-critical and authorized the recommended shared session implementation.
 - Requiring proof approval intentionally removes unapproved examples from public links.
 - Sanity-backed admin sessions require configuration and network availability. Failed
   validation denies access; failed revocation must not masquerade as successful logout.
-- The legacy ContactForm calls `/api/contact`, but no page imports it. Leave both
-  untouched until an actual caller requires that duplicate delivery path.
 
 ## Verification plan
 
-Use dependency-free `node:test` coverage with the installed TypeScript transpiler:
-real intake handler with stubbed upstream, actual GROQ queries against in-memory
-documents, pricing fallback states, rendered proof/results, and shared-session
-validation/revocation. No live customer submissions in automated checks.
-Build/lint/typecheck are not part of this pass under the workspace restriction.
-Record actual execution results separately; added coverage is not evidence of a pass.
+The original conversion repair used `node:test` with stubbed upstream and
+storage boundaries for the request route, in-memory GROQ queries, pricing, proof
+rendering, and admin session validation/revocation. For Phase 7A-1, the Worker
+check runs its SQL migration against in-memory SQLite, not a remote D1 database:
 
-## Known external Worker evidence
+```bash
+cd workers/intake-worker
+node --test worker.test.mjs
+```
 
-Inspected source: `D:\claude-bridge-sandbox\intake-worker`, package version `0.1.0`.
-Its success contract is `{ ok: true, issueId, issueIdentifier, issueUrl }`.
-The deployed version, destination, and operational owner remain unknown.
-Source truncates long field values and mishandles/ignores routing labels; acceptance
-alone does not prove complete delivery or dispatcher processing. Quinn must verify
-these with the operational owner before intake can be marked launch-ready.
+Use synthetic data only. Record observed results separately; instructions and
+added coverage are not evidence of a pass or a working deployment.
+
+## D1 intake runtime contract
+
+`/contact` sends public form data to Next.js `POST /api/intake`. Next.js validates
+the form and sends a flat JSON body with `requestType`, `name`, `email`, `company`,
+`projectType`, `budgetRange`, and `message` to Worker `POST /requests`. The
+Worker requires `Authorization: Bearer <WORKER_SECRET>` on request routes and
+writes to D1 before returning `201 { ok: true, id, reference, createdAt }`.
+After validating that receipt, Next.js returns HTTP 200 with
+`{ success: true, message: "Request received successfully.", reference }`. The
+reference is a receipt, not an access credential or proof of human review.
+
+| Session-protected Next.js endpoint | Worker endpoint | Success response bodies |
+| --- | --- | --- |
+| `GET /api/admin/requests` | `GET /requests` (optional `status` and `limit` query parameters on the Worker) | Worker: `200 { ok: true, requests }`. Next.js: `200 { success: true, requests }`. |
+| `PATCH /api/admin/requests/[id]` | `PATCH /requests/:id` | Worker: `200 { ok: true, request }`. Next.js: `200 { success: true, request }`. |
+
+The admin API validates the session cookie before calling the Worker. PATCH
+accepts `status` and/or `notes` (up to 5,000 characters). Each `IntakeRequest`
+has string fields `id`, `reference`, `status`, `requestType`, `name`, `email`,
+`company`, `projectType`, `budgetRange`, `message`, `notes`, `createdAt`, and
+`updatedAt`. Status is `new`, `active`, `in_review`, or `done`; request type is
+`prospect`, `client`, or `question`.
+
+Direct persistence supports follow-up from the portal but puts names, email
+addresses, freeform messages, and internal notes in Cloudflare D1. Restrict
+portal and Cloudflare access, keep private data and authorization headers out
+of logs and analytics, and define retention and deletion procedures before
+accepting real requests. A public reference should not enter analytics.
 
 ## Implemented status and file inventory
 
@@ -70,11 +100,11 @@ these with the operational owner before intake can be marked launch-ready.
 | --- | --- |
 | Proof listing/detail | Shared approval/populated-content predicate; home consumes the same source; no static example links; intentional Work empty state. Detail projection includes excerpt and slug. Static params and sitemap inherit eligibility from `getCaseStudies`. |
 | Results | Missing results and tags produce no invented outcome/technology claims. CMS URLs in rich text reject unsafe schemes. Case-study images have reserved aspect ratio and responsive sizes. |
-| Intake | Shared request validation, explicit Worker acceptance contract, HTTPS-only configured URL, redirect rejection, 10-second timeout, generic errors, no raw upstream logging or private issue URL returned. Form retains values on failure and records success only after confirmed acceptance. Live delivery is blocked by operational evidence below. |
-| Admin | Shared expiring hashed-token sessions, Node Proxy guard, awaited validation/revocation, confirmed-logout UI. No hard-coded Linear team fallback; an explicit configured destination is required. Storage outage fails closed. |
+| Intake | Shared validation and a D1 receipt contract. The form retains values on failure and records success only after confirmed acceptance. Remote delivery and configuration are not verified by Phase 7A-1. |
+| Admin | Shared expiring hashed-token sessions, Node Proxy guard, awaited validation/revocation, confirmed-logout UI, and session-protected D1 list and update routes. Session storage outage fails closed. |
 | Pricing | Missing, failed and empty CMS fetches use existing `pricingOffers` without changing their text. Exact commercial approval/Rescue Sprint terms remain blocked. |
 | Interaction | Featured case-study actions visible at rest, request tabs have visible keyboard focus, reveals expose focused/reduced-motion content, Hero GSAP follows live motion preference and reverts on cleanup. Broader design/token work is blocked. |
-| Measurement | Missing/placeholder/malformed GTM IDs load no container. Existing event names/parameters remain unchanged pending Elliot. No private form fields or ticket reference are added to form analytics. |
+| Measurement | Missing/placeholder/malformed GTM IDs load no container. Existing event names/parameters remain unchanged pending Elliot. No private form fields or request reference are added to form analytics. |
 
 Application files:
 
@@ -85,6 +115,7 @@ Application files:
 - `app/api/admin/login/route.ts`
 - `app/api/admin/logout/route.ts`
 - `app/api/admin/requests/route.ts`
+- `app/api/admin/requests/[id]/route.ts`
 - `app/layout.tsx`
 - `app/portal-admin/page.tsx`
 - `components/cards/project-card.tsx`
@@ -100,12 +131,12 @@ Application files:
 - `sanity/schemaTypes/caseStudy.ts`
 - `proxy.ts` replaces `middleware.ts` using the installed Next 16 convention.
 
-Coverage: `tests/load-ts.cjs`, `tests/conversion.test.cjs`,
-`tests/admin-session.test.cjs`. Documentation: this file, `docs/forms-and-leads.md`,
-`docs/api-spec.md`, and the README handoff link. No dependency/lockfile, static offer,
-theme token, external Worker, or CMS content records were changed.
+Conversion repair coverage: `tests/load-ts.cjs`, `tests/conversion.test.cjs`,
+and `tests/admin-session.test.cjs`. That repair left dependencies, the lockfile,
+static offers, theme tokens, and CMS content records unchanged. The D1 Worker
+and its local test are in [`workers/intake-worker/`](../workers/intake-worker/).
 
-## Actual verification evidence — 2026-10-23
+## Historical verification evidence — 2026-10-23 (pre-cutover)
 
 - Clean `main` checkout confirmed before edits. Installed and locked versions agree:
   Next.js `16.2.2`, React `19.2.4`, Sanity `5.19.0`, next-sanity `12.2.1`.
@@ -132,11 +163,11 @@ theme token, external Worker, or CMS content records were changed.
 
 | Configuration | Requirement |
 | --- | --- |
-| `WORKER_URL`, `PATH_SECRET` | Server-only; configured locally by presence check, values never printed. Actual deployed Worker/destination/owner still need verification. |
+| `WORKER_URL` | Next.js server-only HTTPS Worker root, without a path, credentials, query string, or fragment. |
+| `WORKER_SECRET`, `INTAKE_SECRET` | Server-only shared secret: the Next.js `WORKER_SECRET` must match the Worker's `INTAKE_SECRET`. No `NEXT_PUBLIC_` prefix, secret URLs, or logging. |
 | `NEXT_PUBLIC_SANITY_PROJECT_ID`, `NEXT_PUBLIC_SANITY_DATASET` | Existing Sanity project; dataset defaults to `production`. Project ID absent locally. Every application instance must use the same dataset. |
 | `SANITY_API_WRITE_TOKEN` | New server-only session credential in the existing Sanity project. Needs `adminSession` read/create/delete access. Never use `NEXT_PUBLIC_` for it. No raw session tokens/passwords are stored in CMS. |
 | `ADMIN_PASSWORD` | Existing server-only administrator password. Successful real login remains unverified. |
-| `LINEAR_API_KEY`, `LINEAR_TEAM_ID` | Existing server-only portal integration; explicit intended team required. No guessed destination fallback. |
 | `NEXT_PUBLIC_GTM_ID` | Absent locally. Supply Elliot's actual container and verify destination receipt; placeholder/invalid values stay disabled. |
 
 Host must support the Next 16 Node Proxy, not a static export. Session creation and
@@ -146,19 +177,21 @@ remain stored but cannot authenticate; establish operational housekeeping separa
 
 ## Reproducible QA handoff — Quinn → Sloane
 
-1. Run the focused command above, then the authorized build/typecheck/lint checks in
-   the release environment. Capture real desktop/mobile/keyboard/screen-reader evidence.
+1. Run the applicable focused local checks above and record the actual results.
+   Run release-environment checks only when authorized. Capture real desktop,
+   mobile, keyboard, and screen-reader evidence for release acceptance.
 2. With CMS absent, empty, or unreachable, confirm no broken proof links and honest
    empty states. With owner-approved populated documents, follow every public card and
    sitemap URL to its detail. Draft/incomplete/missing projects must not appear.
    Verify optional results/tags disappear when absent; approve every published claim.
-3. In a controlled preview with the Worker owner, submit a synthetic inquiry containing
-   **more than 500 characters**. Verify exact full message retention, intended business
-   destination receipt, labels/dispatcher routing, deployed Worker version and owner.
-   Check invalid JSON/fields, honeypot, absent configuration, upstream rejection, timeout,
-   offline and malformed-success responses. Error UI retains values; no success event.
-   An accepted ticket emits one `form_submit`, containing no private text or reference ID.
-   A lost acknowledgement may leave an accepted issue; no automatic retry is performed.
+3. Locally, use synthetic data to check validation and the D1 create/list/update
+   contract. Check invalid JSON/fields, honeypot, absent configuration, rejection,
+   timeout, and malformed receipts. The form retains values on failure; accepted
+   requests emit one `form_submit` with no private text or reference. A lost
+   acknowledgement can leave a stored request; do not assume failure means no
+   write. After Gate 7B approval, verify the same synthetic flow on the intended
+   deployment, including persisted message contents (over 500 characters),
+   authenticated portal listing, status/notes updates, and request logging settings.
 4. Configure the existing shared session store. Login on instance A, access portal/API
    on B, logout on B, and replay the old cookie against A: access must be denied.
    Missing, forged, expired and revoked cookies fail closed. Simulate storage failure:
@@ -178,8 +211,7 @@ Release acceptance is **pending** these independent checks and approval dependen
 
 ## Rollback
 
-Revert this bounded repair diff and restore the previous application revision. No
-content migration or external deployment is performed here. Reverting sessions logs
-administrators out and restores the previous known authentication defect; rotate/remove
-the dedicated session write token if abandoning this implementation. Do not restore
-fabricated proof claims as an operational workaround.
+Restoring the pre-repair application revision logs administrators out and restores
+the previous known authentication defect. Rotate/remove the dedicated session write
+token if abandoning shared sessions. Do not restore fabricated proof claims.
+Rolling back application code does not delete requests already stored in D1.

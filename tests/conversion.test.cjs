@@ -18,16 +18,16 @@ const submission = {
   projectType: 'Marketing Website', budgetRange: '', message: 'Controlled local regression inquiry.',
 };
 const acceptance = {
-  ok: true, issueId: 'test-issue-id', issueIdentifier: 'QA-123',
-  issueUrl: 'https://linear.app/test/issue/QA-123',
+  ok: true, id: '350eff2e-95d8-4239-a37d-5f76e07ea29d', reference: 'REQ-0001',
+  createdAt: '2026-11-21T10:00:00.000Z',
 };
 const request = (payload = submission) => new Request('https://site.invalid/api/intake', {
   method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' },
 });
 function intake() {
   process.env.WORKER_URL = 'https://worker.invalid';
-  process.env.PATH_SECRET = 'local-test-only';
-  return loadTs('app/api/intake/route.ts').POST;
+  process.env.WORKER_SECRET = 'offline-worker-token';
+  return loadTs('app/api/intake/route.ts', { 'server-only': {} }).POST;
 }
 
 test('intake rejects invalid input and honeypots without contacting the Worker', async () => {
@@ -41,44 +41,93 @@ test('intake rejects invalid input and honeypots without contacting the Worker',
 
 test('intake fails closed for missing or unsafe Worker configuration', async () => {
   const POST = intake();
-  global.fetch = () => assert.fail('invalid configuration must not send a request');
-  delete process.env.PATH_SECRET;
+  let calls = 0;
+  global.fetch = () => { calls++; throw new Error('Unexpected Worker call'); };
+  delete process.env.WORKER_SECRET;
   assert.equal((await POST(request())).status, 503);
-  process.env.PATH_SECRET = 'local-test-only';
-  process.env.WORKER_URL = 'http://worker.invalid';
+  process.env.WORKER_SECRET = '  ';
   assert.equal((await POST(request())).status, 503);
+  process.env.WORKER_SECRET = 'offline-worker-token';
+  for (const base of [
+    'http://worker.invalid', 'https://user@worker.invalid', 'https://worker.invalid/private',
+    'https://worker.invalid/?', 'https://worker.invalid/#', 'https://worker.invalid/./',
+  ]) {
+    process.env.WORKER_URL = base;
+    assert.equal((await POST(request())).status, 503);
+  }
+  assert.equal(calls, 0);
 });
 
-test('intake requires explicit Worker acceptance with issue identifiers', async () => {
+test('intake requires a 201 and a complete Worker receipt', async () => {
   const POST = intake();
-  for (const payload of [{}, { ...acceptance, ok: false }, { ...acceptance, issueIdentifier: '' }]) {
-    global.fetch = async () => Response.json(payload);
+  for (const payload of [{}, { ...acceptance, ok: false }, { ...acceptance, reference: '' }, { ...acceptance, createdAt: null }]) {
+    global.fetch = async () => Response.json(payload, { status: 201 });
     const response = await POST(request());
     assert.equal(response.status, 502);
     assert.equal((await response.json()).success, false);
   }
-  global.fetch = async () => new Response('not JSON');
+  global.fetch = async () => new Response('not JSON', { status: 201 });
+  assert.equal((await POST(request())).status, 502);
+  global.fetch = async () => Response.json(acceptance);
   assert.equal((await POST(request())).status, 502);
 });
 
-test('intake forwards fields once and confirms acceptance without exposing issue URLs', async () => {
+test('intake keeps the complete message and returns only a public receipt', async () => {
   const POST = intake();
   let calls = 0;
-  global.fetch = async (_url, options) => {
+  let message;
+  global.fetch = async (url, options) => {
     calls++;
-    assert.ok(options.signal);
+    assert.equal(url, 'https://worker.invalid/requests');
+    assert.equal(options.method, 'POST');
+    assert.equal(options.headers.get('authorization'), 'Bearer offline-worker-token');
+    assert.equal(options.headers.get('content-type'), 'application/json');
+    assert.ok(options.signal instanceof AbortSignal);
     assert.equal(options.redirect, 'error');
-    const payload = JSON.parse(options.body);
-    assert.equal(payload.fields.message, submission.message);
-    assert.equal(payload.fields.requestType, 'prospect');
-    return Response.json(acceptance);
+    assert.deepEqual(JSON.parse(options.body), { ...submission, message });
+    return Response.json({ ...acceptance, extraPrivateData: 'not public' }, { status: 201 });
   };
-  const response = await POST(request());
-  assert.equal(response.status, 200);
-  assert.deepEqual(await response.json(), {
-    success: true, message: 'Request received successfully.', issueIdentifier: 'QA-123',
+  const start = '  Start\n東京 🔧\n';
+  const end = '\nEnd  ';
+  for (const length of [2000, 10000]) {
+    message = start + '界'.repeat(length - start.length - end.length) + end;
+    const response = await POST(request({ ...submission, message, honeypot: '' }));
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), {
+      success: true, message: 'Request received successfully.', reference: 'REQ-0001',
+    });
+  }
+  assert.equal(calls, 2);
+});
+
+test('intake rejects over-limit fields and actual streamed bytes before forwarding', async () => {
+  const POST = intake();
+  let calls = 0;
+  global.fetch = () => { calls++; throw new Error('Unexpected Worker call'); };
+  for (const [field, value] of Object.entries({
+    name: 'a'.repeat(121), email: `${'a'.repeat(244)}@example.test`,
+    company: 'a'.repeat(121), projectType: 'a'.repeat(121),
+    budgetRange: 'a'.repeat(121), message: 'a'.repeat(10001),
+  })) {
+    const response = await POST(request({ ...submission, [field]: value }));
+    assert.equal(response.status, 400);
+    assert.ok((await response.json()).errors[field]?.length);
+  }
+  const json = JSON.stringify({ ...submission, message: '界'.repeat(10000) });
+  const bytes = new TextEncoder().encode(json + ' '.repeat(32769 - Buffer.byteLength(json)));
+  let next = 0;
+  const body = new ReadableStream({
+    pull(controller) {
+      if (next >= bytes.length) return controller.close();
+      controller.enqueue(bytes.subarray(next, next += 4096));
+    },
   });
-  assert.equal(calls, 1);
+  const response = await POST(new Request('https://site.invalid/api/intake', {
+    method: 'POST', body, duplex: 'half', headers: { 'Content-Type': 'application/json' },
+  }));
+  assert.equal(response.status, 413);
+  assert.equal((await response.json()).success, false);
+  assert.equal(calls, 0);
 });
 
 test('intake maps rejection, network failure and timeouts without leaking upstream content', async () => {
@@ -271,7 +320,7 @@ test('public form retains values and emits no success for failed or malformed re
     async () => { throw new Error('offline'); },
     async () => Response.json({ success: false }, { status: 502 }),
     async () => new Response('bad JSON'),
-    async () => Response.json({ success: false, issueIdentifier: 'QA-123' }),
+    async () => Response.json({ success: false, reference: 'REQ-0001' }),
     async () => Response.json({ success: true }),
   ]) {
     const form = requestForm();
@@ -293,12 +342,12 @@ test('public form records one accepted submission without private fields', async
   let requests = 0;
   global.fetch = async () => {
     requests++;
-    return Response.json({ success: true, issueIdentifier: 'QA-123' });
+    return Response.json({ success: true, reference: 'REQ-0001' });
   };
   await form.submit();
-  assert.equal(form.state[1], 'QA-123');
+  assert.equal(form.state[1], 'REQ-0001');
   const receipt = form.render();
-  assert.match(renderToStaticMarkup(receipt), /Reference: QA-123/);
+  assert.match(renderToStaticMarkup(receipt), /Reference: REQ-0001/);
   assert.equal(form.resets(), 0);
   findElement(receipt, (node) => node.props?.children === 'Send another request').props.onClick();
   assert.equal(form.resets(), 1);
@@ -308,7 +357,7 @@ test('public form records one accepted submission without private fields', async
   assert.equal(events.length, 1);
   const { name, ...payload } = events[0];
   assert.equal(name, 'form_submit');
-  for (const field of ['name', 'email', 'company', 'message', 'issueIdentifier', 'issueUrl']) {
+  for (const field of ['name', 'email', 'company', 'message', 'reference']) {
     assert.equal(field in payload, false);
   }
 });

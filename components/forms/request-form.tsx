@@ -115,7 +115,7 @@ export default function RequestForm() {
       }
 
       submission.current = "accepted";
-      setReceipt(accepted.data.issueIdentifier);
+      setReceipt(accepted.data.reference);
     } catch {
       setSubmitError(unconfirmed);
       return;

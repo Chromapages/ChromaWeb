@@ -1,95 +1,30 @@
-import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { isValidSessionToken, SESSION_COOKIE } from "@/lib/admin-session";
+import { z } from "zod";
+import { fetchIntakeWorker, intakeRequestSchema, intakeWorkerErrorStatus } from "@/lib/intake-worker";
 
-const LINEAR_TEAM_ID = process.env.LINEAR_TEAM_ID;
-
+const listSchema = z.object({ ok: z.literal(true), requests: z.array(intakeRequestSchema) });
+const noStore = { "Cache-Control": "no-store" };
 export const GET = async () => {
   const cookieStore = await cookies();
   const session = cookieStore.get(SESSION_COOKIE);
 
   if (!(await isValidSessionToken(session?.value))) {
-    return NextResponse.json({ success: false, message: "Unauthorized." }, { status: 401 });
+    return Response.json({ success: false, message: "Unauthorized." }, { status: 401, headers: noStore });
   }
-
-  const apiKey = process.env.LINEAR_API_KEY;
-  if (!apiKey || !LINEAR_TEAM_ID) {
-    return NextResponse.json(
-      { success: false, message: "Linear integration not configured on server." },
-      { status: 503 }
-    );
-  }
-
-  const query = `
-    query ListPortalIssues($teamId: ID!) {
-      issues(
-        filter: {
-          team: { id: { eq: $teamId } }
-          or: [
-            { labels: { name: { startsWith: "intake/" } } }
-            { labels: { name: { startsWith: "cmd/" } } }
-          ]
-        }
-        orderBy: updatedAt
-        first: 50
-      ) {
-        nodes {
-          id
-          identifier
-          title
-          description
-          createdAt
-          updatedAt
-          state { id name type }
-          labels {
-            nodes { id name color }
-          }
-          comments(first: 10) {
-            nodes {
-              id
-              body
-              createdAt
-            }
-          }
-        }
-      }
-    }
-  `;
 
   try {
-    const response = await fetch("https://api.linear.app/graphql", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": apiKey,
-      },
-      body: JSON.stringify({
-        query,
-        variables: { teamId: LINEAR_TEAM_ID },
-      }),
+    const upstream = await fetchIntakeWorker("/requests", { method: "GET" });
+    if (upstream.ok) {
+      const parsed = listSchema.safeParse(await upstream.json());
+      if (parsed.success) {
+        return Response.json({ success: true, requests: parsed.data.requests }, { headers: noStore });
+      }
+    }
+  } catch (error) {
+    return Response.json({ success: false, message: "Unable to load requests." }, {
+      status: intakeWorkerErrorStatus(error), headers: noStore,
     });
-
-    if (!response.ok) {
-      return NextResponse.json(
-        { success: false, message: "Failed to query Linear API." },
-        { status: 502 }
-      );
-    }
-
-    const body = await response.json();
-    if (body.errors) {
-      return NextResponse.json(
-        { success: false, message: "Linear GraphQL error." },
-        { status: 502 }
-      );
-    }
-
-    const issues = body.data.issues.nodes || [];
-    return NextResponse.json({ success: true, issues });
-  } catch {
-    return NextResponse.json(
-      { success: false, message: "Network error when contacting Linear." },
-      { status: 500 }
-    );
   }
+  return Response.json({ success: false, message: "Unable to load requests." }, { status: 502, headers: noStore });
 };

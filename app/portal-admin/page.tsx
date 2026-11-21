@@ -1,473 +1,410 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  Search,
-  LogOut,
-  Inbox,
-  Play,
-  AlertTriangle,
-  CheckCircle,
-  ExternalLink,
-  Mail,
-  RefreshCw,
-  Clock,
-  Layers,
-  HelpCircle,
-} from "lucide-react";
-import clsx from "clsx";
+import type { IntakeRequest, IntakeRequestType, IntakeStatus } from "@/types/intake";
 
-type Label = { id: string; name: string; color: string };
-type Comment = { id: string; body: string; createdAt: string };
-type Issue = {
+const statusLabels = {
+  new: "New",
+  active: "Active",
+  in_review: "In Review",
+  done: "Done",
+} as const satisfies Record<IntakeStatus, string>;
+
+const requestTypeLabels = {
+  prospect: "Project inquiry",
+  client: "Client support",
+  question: "Question",
+} as const satisfies Record<IntakeRequestType, string>;
+
+const requestTextFields = [
+  "id", "reference", "name", "email", "company", "projectType", "budgetRange",
+  "message", "notes", "createdAt", "updatedAt",
+] as const;
+
+type RequestPatch = Partial<Pick<IntakeRequest, "status" | "notes">>;
+type SaveState = {
   id: string;
-  identifier: string;
-  title: string;
-  description: string;
-  createdAt: string;
-  updatedAt: string;
-  state: { id: string; name: string; type: string };
-  labels: { nodes: Label[] };
-  comments: { nodes: Comment[] };
+  field: "status" | "notes";
+  phase: "pending" | "saved" | "error";
 };
+type Filter = "all" | IntakeStatus;
+
+const statuses = Object.keys(statusLabels) as IntakeStatus[];
+const filters: Filter[] = ["all", ...statuses];
+const requestWindow = 50;
+const notesLimit = 5000;
+const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
+const timestampFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" });
+const actionClass = "inline-flex min-h-11 items-center justify-center rounded-functional border border-muted-dark px-4 py-2 text-sm font-semibold text-white hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-60";
+const inputClass = "w-full min-w-0 rounded-functional border border-muted-dark bg-slate-950 px-3 py-2 text-base text-white disabled:opacity-60";
+const cardClass = "rounded-panel border border-outline-dark bg-slate-900 p-4 sm:p-5";
+const badgeClass = "inline-block rounded-functional border border-outline-dark px-2 py-0.5 text-sm font-semibold text-muted-dark";
+
+function isIntakeRequest(value: unknown): value is IntakeRequest {
+  if (!value || typeof value !== "object") return false;
+  const row = value as Record<string, unknown>;
+  return requestTextFields.every((field) => typeof row[field] === "string")
+    && typeof row.status === "string" && Object.hasOwn(statusLabels, row.status)
+    && typeof row.requestType === "string" && Object.hasOwn(requestTypeLabels, row.requestType);
+}
+
+function formatDate(value: string, format = dateFormat) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "Unavailable" : format.format(date);
+}
 
 export default function AdminDashboardPage() {
   const router = useRouter();
-  const [issues, setIssues] = useState<Issue[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [requests, setRequests] = useState<IntakeRequest[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"all" | "inbox" | "active" | "in_review" | "done">("all");
-  const [selectedIssueId, setSelectedIssueId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState<Filter>("all");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [save, setSave] = useState<SaveState | null>(null);
+  const [loggingOut, setLoggingOut] = useState(false);
+  const busy = useRef(false);
 
-  const fetchRequests = useCallback(async (showLoadingState = true) => {
-    if (showLoadingState) setIsLoading(true);
-    setError(null);
-
+  const loadRequests = useCallback(async (signal?: AbortSignal) => {
+    const timeout = AbortSignal.timeout(15_000);
     try {
-      const response = await fetch("/api/admin/requests");
-
+      const response = await fetch("/api/admin/requests", {
+        cache: "no-store",
+        signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
+      });
+      if (signal?.aborted) return;
       if (response.status === 401) {
-        router.push("/portal-admin/login");
+        router.replace("/portal-admin/login");
         return;
       }
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch requests.");
-      }
-
+      if (!response.ok) throw new Error();
       const data = await response.json();
-      setIssues(data.issues || []);
-    } catch (err: unknown) {
-      console.error(err);
-      setError((err instanceof Error && err.message) || "An unexpected error occurred while loading requests.");
+      if (data?.success !== true || !Array.isArray(data.requests) || !data.requests.every(isIntakeRequest)) {
+        throw new Error();
+      }
+      if (!signal?.aborted) setRequests(data.requests);
+    } catch {
+      if (!signal?.aborted) setError("Couldn’t load requests. Try refreshing the list.");
     } finally {
-      setIsLoading(false);
-      setIsRefreshing(false);
+      if (!signal?.aborted) setLoading(false);
     }
   }, [router]);
 
   useEffect(() => {
-    void fetchRequests();
-  }, [fetchRequests]);
+    const controller = new AbortController();
+    void loadRequests(controller.signal);
+    return () => controller.abort();
+  }, [loadRequests]);
 
-  const handleRefreshClick = () => {
-    setIsRefreshing(true);
-    fetchRequests(false);
-  };
+  function refresh() {
+    if (busy.current) return;
+    busy.current = true;
+    setLoading(true);
+    setError(null);
+    setSave(null);
+    void loadRequests().finally(() => { busy.current = false; });
+  }
 
-  const handleLogoutClick = async () => {
+  async function logout() {
+    if (busy.current) return;
+    busy.current = true;
+    setLoggingOut(true);
+    setError(null);
     try {
-      const response = await fetch("/api/admin/logout", { method: "POST" });
-      const result = await response.json();
-      if (!response.ok || result.success !== true) {
-        throw new Error("Logout could not be confirmed.");
-      }
-      router.push("/portal-admin/login");
+      const response = await fetch("/api/admin/logout", {
+        method: "POST",
+        signal: AbortSignal.timeout(15_000),
+      });
+      const data = await response.json();
+      if (!response.ok || data?.success !== true) throw new Error();
+      router.replace("/portal-admin/login");
     } catch {
-      setError("Logout could not be confirmed. Please try again.");
+      busy.current = false;
+      setLoggingOut(false);
+      setError("Couldn’t confirm logout. Try again.");
     }
-  };
+  }
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(e.target.value);
-  };
-
-  const handleFilterChange = (filter: typeof statusFilter) => {
-    setStatusFilter(filter);
-  };
-
-  const getIssueCategory = (issue: Issue): "inbox" | "active" | "in_review" | "done" => {
-    const labelNames = issue.labels.nodes.map((n) => n.name.toLowerCase());
-    const stateType = issue.state.type.toLowerCase();
-
-    if (stateType === "completed" || stateType === "done" || stateType === "canceled") return "done";
-    if (labelNames.includes("handler-failed")) return "in_review";
-    if (labelNames.includes("intake/web") || labelNames.includes("cmd/intake")) return "inbox";
-    if (stateType === "started" || stateType === "unstarted" || stateType === "backlog") {
-      if (labelNames.some((l) => l.startsWith("cmd/"))) return "active";
-      return "inbox";
+  async function saveRequest(id: string, patch: RequestPatch) {
+    if (busy.current) return;
+    busy.current = true;
+    const field = patch.status === undefined ? "notes" : "status";
+    setSave({ id, field, phase: "pending" });
+    try {
+      const response = await fetch(`/api/admin/requests/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+        signal: AbortSignal.timeout(15_000),
+      });
+      if (response.status === 401) {
+        router.replace("/portal-admin/login");
+        return;
+      }
+      if (!response.ok) throw new Error();
+      const data = await response.json();
+      const updated: unknown = data?.request;
+      if (data?.success !== true || !isIntakeRequest(updated) || updated.id !== id) throw new Error();
+      setRequests((rows) => rows.map((row) => row.id === id ? updated : row));
+      if (patch.notes !== undefined) {
+        setDrafts((current) => {
+          if (current[id] !== patch.notes) return current;
+          const next = { ...current };
+          delete next[id];
+          return next;
+        });
+      }
+      setSave({ id, field, phase: "saved" });
+    } catch {
+      setSave({ id, field, phase: "error" });
+    } finally {
+      busy.current = false;
     }
-    return "active";
-  };
+  }
 
-  const filteredIssues = issues.filter((issue) => {
-    const category = getIssueCategory(issue);
-    const matchesFilter = statusFilter === "all" || category === statusFilter;
-
-    const query = searchQuery.toLowerCase().trim();
-    if (!query) return matchesFilter;
-
-    const matchesSearch =
-      issue.title.toLowerCase().includes(query) ||
-      issue.identifier.toLowerCase().includes(query) ||
-      issue.description.toLowerCase().includes(query);
-
-    return matchesFilter && matchesSearch;
-  });
-
-  const selectedIssue = issues.find((i) => i.id === selectedIssueId);
-
-  // Compute stat counts
-  const inboxCount = issues.filter((i) => getIssueCategory(i) === "inbox").length;
-  const activeCount = issues.filter((i) => getIssueCategory(i) === "active").length;
-  const inReviewCount = issues.filter((i) => getIssueCategory(i) === "in_review").length;
-  const doneCount = issues.filter((i) => getIssueCategory(i) === "done").length;
+  const counts = { all: requests.length, new: 0, active: 0, in_review: 0, done: 0 };
+  const query = search.trim().toLowerCase();
+  const matches: IntakeRequest[] = [];
+  let selected: IntakeRequest | undefined;
+  for (const request of requests) {
+    counts[request.status]++;
+    if (request.id === selectedId) selected = request;
+    if (filter !== "all" && request.status !== filter) continue;
+    if (!query || [
+      request.reference, request.name, request.email, request.company,
+      request.requestType, requestTypeLabels[request.requestType], request.message,
+    ].some((value) => value.toLowerCase().includes(query))) {
+      matches.push(request);
+    }
+  }
+  const saving = save?.phase === "pending";
+  const controlsDisabled = loading || saving || loggingOut;
+  const draft = selected ? drafts[selected.id] ?? selected.notes : "";
 
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-950">
-      {/* Sidebar */}
-      <aside className="w-64 border-r border-slate-900 bg-slate-900/40 p-6 flex flex-col justify-between">
-        <div className="space-y-8">
-          <div>
-            <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-full bg-indigo-500 animate-pulse"></span>
-              ChromaPages
-            </h2>
-            <p className="text-xs text-indigo-400 font-semibold tracking-wider uppercase mt-1">Portal Admin</p>
-          </div>
-
-          <nav className="space-y-1.5">
-            <button
-              onClick={() => handleFilterChange("all")}
-              className={clsx(
-                "flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer text-left",
-                statusFilter === "all"
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/15"
-                  : "text-slate-400 hover:bg-slate-900/60 hover:text-slate-200"
-              )}
-            >
-              <Layers className="h-4.5 w-4.5" />
-              All Requests
-              <span className="ml-auto text-xs bg-slate-950 px-2 py-0.5 rounded-md text-slate-400">{issues.length}</span>
-            </button>
-            <button
-              onClick={() => handleFilterChange("inbox")}
-              className={clsx(
-                "flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer text-left",
-                statusFilter === "inbox"
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/15"
-                  : "text-slate-400 hover:bg-slate-900/60 hover:text-slate-200"
-              )}
-            >
-              <Inbox className="h-4.5 w-4.5" />
-              Inbox (New)
-              <span className="ml-auto text-xs bg-slate-950 px-2 py-0.5 rounded-md text-slate-400">{inboxCount}</span>
-            </button>
-            <button
-              onClick={() => handleFilterChange("active")}
-              className={clsx(
-                "flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer text-left",
-                statusFilter === "active"
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/15"
-                  : "text-slate-400 hover:bg-slate-900/60 hover:text-slate-200"
-              )}
-            >
-              <Play className="h-4.5 w-4.5" />
-              Active
-              <span className="ml-auto text-xs bg-slate-950 px-2 py-0.5 rounded-md text-slate-400">{activeCount}</span>
-            </button>
-            <button
-              onClick={() => handleFilterChange("in_review")}
-              className={clsx(
-                "flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer text-left",
-                statusFilter === "in_review"
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/15"
-                  : "text-slate-400 hover:bg-slate-900/60 hover:text-slate-200"
-              )}
-            >
-              <AlertTriangle className="h-4.5 w-4.5" />
-              In Review
-              <span className="ml-auto text-xs bg-slate-950 px-2 py-0.5 rounded-md text-slate-400">{inReviewCount}</span>
-            </button>
-            <button
-              onClick={() => handleFilterChange("done")}
-              className={clsx(
-                "flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition cursor-pointer text-left",
-                statusFilter === "done"
-                  ? "bg-indigo-600 text-white shadow-lg shadow-indigo-600/15"
-                  : "text-slate-400 hover:bg-slate-900/60 hover:text-slate-200"
-              )}
-            >
-              <CheckCircle className="h-4.5 w-4.5" />
-              Done
-              <span className="ml-auto text-xs bg-slate-950 px-2 py-0.5 rounded-md text-slate-400">{doneCount}</span>
-            </button>
-          </nav>
-        </div>
-
-        <button
-          onClick={handleLogoutClick}
-          className="flex w-full items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-red-500/5 hover:text-red-300 transition cursor-pointer text-left"
-        >
-          <LogOut className="h-4.5 w-4.5" />
-          Log Out
-        </button>
-      </aside>
-
-      {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <header className="h-16 border-b border-slate-900 px-8 flex items-center justify-between gap-4 bg-slate-950/20 backdrop-blur-md">
-          <div className="flex-1 max-w-md relative">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500" />
-            <input
-              type="text"
-              placeholder="Search tickets..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="w-full rounded-xl border border-slate-800 bg-slate-900/40 pl-10 pr-4 py-2 text-sm text-slate-200 placeholder-slate-500 outline-none transition focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20"
-            />
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button
-              onClick={handleRefreshClick}
-              disabled={isRefreshing}
-              aria-label="Refresh list"
-              className={clsx(
-                "p-2 rounded-xl border border-slate-850 hover:bg-slate-900 text-slate-400 hover:text-slate-200 transition cursor-pointer",
-                isRefreshing && "animate-spin"
-              )}
-            >
-              <RefreshCw className="h-4 w-4" />
-            </button>
-          </div>
-        </header>
-
-        {/* Inner Grid */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Ticket List */}
-          <div className="w-1/2 overflow-y-auto border-r border-slate-900 p-6 space-y-4">
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-20 text-slate-500 space-y-3">
-                <RefreshCw className="h-8 w-8 animate-spin text-indigo-500" />
-                <p className="text-sm">Retrieving requests from Linear...</p>
-              </div>
-            ) : error ? (
-              <div className="rounded-xl border border-red-500/10 bg-red-500/5 p-6 text-center text-red-400">
-                <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-red-500" />
-                <p className="text-sm font-semibold">Error Loading Requests</p>
-                <p className="text-xs mt-1 text-red-400/80">{error}</p>
+    <div className="cp-dark min-h-screen">
+      <div className="cp-container grid gap-6 py-6 lg:grid-cols-[12rem_minmax(0,1fr)]">
+        <aside aria-label="Request filters" className="min-w-0">
+          <p className="font-semibold text-white">Chromapages</p>
+          <p className="text-sm text-muted-dark">Portal Admin</p>
+          <ul className="mt-4 flex flex-wrap gap-2 lg:flex-col">
+            {filters.map((value) => (
+              <li key={value}>
                 <button
-                  onClick={handleRefreshClick}
-                  className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-semibold transition cursor-pointer"
+                  type="button"
+                  aria-pressed={filter === value}
+                  onClick={() => setFilter(value)}
+                  className="flex min-h-11 w-full items-center justify-between gap-3 rounded-functional border border-transparent px-3 py-2 text-left text-sm font-semibold text-white hover:bg-white/10 aria-pressed:border-muted-dark aria-pressed:bg-slate-800"
                 >
-                  Try Again
+                  {value === "all" ? "All Requests" : statusLabels[value]}
+                  <span className="text-muted-dark tabular-nums">{counts[value]}</span>
                 </button>
+              </li>
+            ))}
+          </ul>
+          <button type="button" onClick={logout} disabled={controlsDisabled} className={`${actionClass} mt-4`}>
+            {loggingOut ? "Logging out…" : "Log Out"}
+          </button>
+        </aside>
+
+        <main id="main-content" tabIndex={-1} className="min-w-0">
+          <header className="border-b border-outline-dark pb-4">
+            <h1 className="font-body text-2xl font-bold text-white">Intake requests</h1>
+            <div className="mt-4 flex flex-wrap items-end gap-3">
+              <div className="min-w-0 grow sm:max-w-md">
+                <label htmlFor="request-search" className="mb-1 block text-sm font-semibold">Search requests</label>
+                <input
+                  type="search"
+                  id="request-search"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                  className={`${inputClass} min-h-11`}
+                />
               </div>
-            ) : filteredIssues.length === 0 ? (
-              <div className="text-center py-20 text-slate-500">
-                <Inbox className="h-12 w-12 mx-auto mb-4 stroke-1 text-slate-600" />
-                <p className="text-sm font-medium">No requests found</p>
-                <p className="text-xs text-slate-600 mt-1">Try adjusting your filter or search query.</p>
-              </div>
-            ) : (
-              filteredIssues.map((issue) => {
-                const category = getIssueCategory(issue);
-                const isSelected = issue.id === selectedIssueId;
-                const formattedDate = new Date(issue.createdAt).toLocaleDateString(undefined, {
-                  month: "short",
-                  day: "numeric",
-                });
+              <button type="button" onClick={refresh} disabled={controlsDisabled} className={actionClass}>
+                Refresh list
+              </button>
+            </div>
+            {error && <p role="alert" className="mt-3 text-sm text-red-300">{error}</p>}
+          </header>
 
-                return (
-                  <button
-                    key={issue.id}
-                    type="button"
-                    aria-label={`${issue.identifier}: ${issue.title}`}
-                    aria-pressed={isSelected}
-                    onClick={() => setSelectedIssueId(issue.id)}
-                    className={clsx(
-                      "relative block w-full rounded-2xl border p-5 text-left transition duration-200 cursor-pointer group hover:translate-y-[-1px] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-400",
-                      isSelected
-                        ? "bg-slate-900/80 border-indigo-500/40 shadow-lg shadow-indigo-950/25"
-                        : "bg-slate-900/30 border-slate-900 hover:border-slate-850 hover:bg-slate-900/50"
-                    )}
-                  >
-                    {/* Glow effect for selection */}
-                    {isSelected && (
-                      <span aria-hidden="true" className="absolute -inset-px rounded-2xl bg-gradient-to-r from-indigo-500 to-purple-600 opacity-10 blur-sm" />
-                    )}
-
-                    <span className="relative flex justify-between items-start gap-4">
-                      <span className="min-w-0 space-y-2.5">
-                        <span className="text-xs font-mono font-semibold text-indigo-400 tracking-wider">
-                          {issue.identifier}
-                        </span>
-                        <span className="text-sm font-semibold text-white group-hover:text-indigo-300 transition duration-150 line-clamp-1">
-                          {issue.title}
-                        </span>
-
-                        {/* Badges */}
-                        <span className="flex flex-wrap gap-1.5">
-                          <span
-                            className={clsx(
-                              "inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium border",
-                              category === "inbox" && "bg-blue-500/5 text-blue-400 border-blue-500/10",
-                              category === "active" && "bg-amber-500/5 text-amber-400 border-amber-500/10",
-                              category === "in_review" && "bg-rose-500/5 text-rose-400 border-rose-500/10",
-                              category === "done" && "bg-emerald-500/5 text-emerald-400 border-emerald-500/10"
-                            )}
-                          >
-                            {category.replace("_", " ").toUpperCase()}
-                          </span>
-
-                          {issue.labels.nodes.map((label) => {
-                            if (label.name.startsWith("intake/") || label.name.startsWith("cmd/")) {
-                              return (
-                                <span
-                                  key={label.id}
-                                  className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-950 text-slate-400 border border-slate-900"
-                                >
-                                  {label.name}
-                                </span>
-                              );
-                            }
-                            return null;
-                          })}
-                        </span>
-                      </span>
-
-                      <span className="shrink-0 text-right space-y-1">
-                        <span className="text-xs text-slate-500 block">{formattedDate}</span>
-                        <span className="text-xs text-slate-500 block font-mono">{issue.state.name}</span>
-                      </span>
-                    </span>
-                  </button>
-                );
-              })
-            )}
-          </div>
-
-          {/* Ticket Detail Panel */}
-          <div className="w-1/2 overflow-y-auto bg-slate-900/10 p-6 flex flex-col">
-            {selectedIssue ? (
-              <div className="space-y-6 flex-1 flex flex-col">
-                <div className="flex justify-between items-start border-b border-slate-900 pb-5 gap-4">
-                  <div>
-                    <span className="text-xs font-mono font-semibold text-indigo-400 tracking-wider">
-                      {selectedIssue.identifier}
-                    </span>
-                    <h2 className="text-lg font-bold text-white mt-1">{selectedIssue.title}</h2>
-                    <p className="text-xs text-slate-500 mt-1">
-                      Submitted {new Date(selectedIssue.createdAt).toLocaleString()}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <a
-                      href={`https://linear.app/issue/${selectedIssue.identifier}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-850 text-xs font-semibold text-indigo-400 hover:text-indigo-300 border border-slate-800 transition cursor-pointer"
+          <div className="mt-6 grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
+            <section aria-labelledby="request-list-title" className="min-w-0">
+              <h2 id="request-list-title" className="font-body text-lg font-semibold text-white">Requests</h2>
+              <p role="status" className="mt-2 text-sm text-muted-dark">
+                {loading ? (requests.length ? "Refreshing requests…" : "Loading requests...") : (
+                  matches.length ? `${matches.length} ${matches.length === 1 ? "request" : "requests"}` : !error ? (
+                    query || filter !== "all" ? "No requests match this filter or search." : "No requests yet."
+                  ) : null
+                )}
+                {requests.length >= requestWindow && (
+                  <span className="block">Search and filters cover the {requestWindow} most recent requests.</span>
+                )}
+              </p>
+              <ul className="mt-2 max-h-[28rem] space-y-2 overflow-y-auto p-1 xl:max-h-[calc(100dvh-12rem)]">
+                {matches.map((request) => (
+                  <li key={request.id}>
+                    <button
+                      type="button"
+                      aria-pressed={request.id === selectedId}
+                      onClick={() => setSelectedId(request.id)}
+                      className="block w-full min-w-0 rounded-panel border border-outline-dark bg-slate-900 px-4 py-3 text-left wrap-anywhere hover:bg-slate-800 aria-pressed:border-accent-bright aria-pressed:bg-slate-800"
                     >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      Linear Link
-                    </a>
-                  </div>
-                </div>
+                      <span className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-sm">
+                        <span className="font-semibold text-accent-bright tabular-nums">{request.reference}</span>
+                        <time dateTime={request.createdAt} className="text-muted-dark">{formatDate(request.createdAt)}</time>
+                      </span>
+                      <span className="mt-1 block font-semibold text-white">{request.name}</span>
+                      {request.company && <span className="block text-sm text-muted-dark">{request.company}</span>}
+                      <span className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-dark">
+                        <span className={badgeClass}>{statusLabels[request.status]}</span>
+                        {requestTypeLabels[request.requestType]}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
 
-                {/* Submitter Info */}
-                <div className="rounded-2xl border border-slate-900 bg-slate-950/40 p-5 space-y-4">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Submitter</h3>
-                  {(() => {
-                    const desc = selectedIssue.description;
-                    const emailMatch = desc.match(/_Submitter email: (.*?)_/);
-                    const email = emailMatch ? emailMatch[1] : null;
-
-                    return (
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm font-semibold text-white">{selectedIssue.title.split("—")[0].replace("[Intake]", "").trim()}</p>
-                          {email && <p className="text-xs text-slate-500 mt-0.5">{email}</p>}
-                        </div>
-                        {email && (
-                          <a
-                            href={`mailto:${email}`}
-                            className="p-2 rounded-xl bg-indigo-600/10 hover:bg-indigo-600/20 text-indigo-400 hover:text-indigo-300 transition cursor-pointer"
-                            aria-label={`Email client at ${email}`}
-                          >
-                            <Mail className="h-4.5 w-4.5" />
-                          </a>
-                        )}
-                      </div>
-                    );
-                  })()}
-                </div>
-
-                {/* Form Data */}
-                <div className="rounded-2xl border border-slate-900 bg-slate-950/40 p-5 space-y-4">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400">Request Data</h3>
-                  <div className="text-sm text-slate-300 whitespace-pre-wrap leading-relaxed font-sans prose prose-invert max-w-none">
-                    {selectedIssue.description}
-                  </div>
-                </div>
-
-                {/* Comments / AI Logs */}
-                <div className="space-y-4 flex-1">
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-                    <Clock className="h-3.5 w-3.5" />
-                    AI Actions & Logs
-                  </h3>
-
-                  {selectedIssue.comments.nodes.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed border-slate-850 p-6 text-center text-slate-500 text-xs">
-                      No AI operations or comments logged yet.
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {selectedIssue.comments.nodes.map((comment) => (
-                        <div key={comment.id} className="p-4 rounded-xl bg-slate-900/40 border border-slate-900/60 space-y-2">
-                          <div className="flex justify-between items-center">
-                            <span className="text-xs font-semibold text-indigo-400">Hermes/Claude Code</span>
-                            <span className="text-2xs text-slate-500">
-                              {new Date(comment.createdAt).toLocaleString()}
-                            </span>
-                          </div>
-                          <div className="text-xs text-slate-300 whitespace-pre-wrap leading-relaxed">
-                            {comment.body}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
+            {selected ? (
+              <RequestDetails
+                request={selected}
+                draft={draft}
+                save={save?.id === selected.id ? save : null}
+                disabled={controlsDisabled}
+                onDraft={(value) => setDrafts((current) => ({ ...current, [selected.id]: value }))}
+                onSave={(patch) => void saveRequest(selected.id, patch)}
+              />
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center text-slate-500 py-20 text-center">
-                <HelpCircle className="h-16 w-16 stroke-1 text-slate-700 mb-4 animate-pulse" />
-                <h3 className="text-sm font-medium">Select a request</h3>
-                <p className="text-xs text-slate-650 max-w-xs mt-1">
-                  Click on any ticket in the left list to review submitter details, form data, and AI dispatch logs.
-                </p>
-              </div>
+              <p className={`${cardClass} text-muted-dark`}>Select a request to review the message and manage its status and notes.</p>
             )}
           </div>
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
+  );
+}
+
+function RequestDetails({
+  request,
+  draft,
+  save,
+  disabled,
+  onDraft,
+  onSave,
+}: {
+  request: IntakeRequest;
+  draft: string;
+  save: SaveState | null;
+  disabled: boolean;
+  onDraft: (value: string) => void;
+  onSave: (patch: RequestPatch) => void;
+}) {
+  const statusFeedback = save?.field === "status" ? save.phase : null;
+  const notesFeedback = save?.field === "notes" ? save.phase : null;
+  return (
+    <section aria-labelledby="request-detail-title" className="min-w-0 space-y-4">
+      <header className="border-b border-outline-dark pb-4">
+        <p className="text-sm font-semibold text-accent-bright tabular-nums">{request.reference}</p>
+        <h2 id="request-detail-title" className="mt-1 font-body text-xl font-bold wrap-anywhere text-white">{request.name}</h2>
+        {request.company && <p className="wrap-anywhere text-muted-dark">{request.company}</p>}
+        <p className={`${badgeClass} mt-2`}>{requestTypeLabels[request.requestType]}</p>
+        <dl className="mt-3 grid gap-x-6 gap-y-2 text-sm text-muted-dark sm:grid-cols-2">
+          <div>
+            <dt className="font-semibold text-white">Submitted</dt>
+            <dd><time dateTime={request.createdAt}>{formatDate(request.createdAt, timestampFormat)}</time></dd>
+          </div>
+          <div>
+            <dt className="font-semibold text-white">Updated</dt>
+            <dd><time dateTime={request.updatedAt}>{formatDate(request.updatedAt, timestampFormat)}</time></dd>
+          </div>
+        </dl>
+        <div className="mt-4 sm:max-w-52">
+          <label htmlFor="request-status" className="mb-1 block text-sm font-semibold">Status</label>
+          <select
+            id="request-status"
+            value={request.status}
+            disabled={disabled}
+            onChange={(event) => onSave({ status: event.target.value as IntakeStatus })}
+            className={`${inputClass} min-h-11 scheme-dark`}
+          >
+            {statuses.map((status) => <option value={status} key={status}>{statusLabels[status]}</option>)}
+          </select>
+        </div>
+        <p role="status" className="text-sm text-muted-dark">
+          {statusFeedback === "pending" ? "Saving status…" : statusFeedback === "saved" ? "Status saved." : null}
+        </p>
+        {statusFeedback === "error" && <p role="alert" className="mt-2 text-sm text-red-300">Couldn’t confirm the status change. Refresh to check, then try again.</p>}
+      </header>
+
+      <div className={cardClass}>
+        <h3 className="font-body font-semibold text-white">Submitter</h3>
+        <dl className="mt-3 space-y-2 text-sm wrap-anywhere">
+          <div>
+            <dt className="text-muted-dark">Name</dt>
+            <dd>{request.name}</dd>
+          </div>
+          <div>
+            <dt className="text-muted-dark">Email</dt>
+            <dd>{request.email}</dd>
+          </div>
+          {request.company && (
+            <div><dt className="text-muted-dark">Company</dt><dd>{request.company}</dd></div>
+          )}
+          {[
+            ["Project type", request.projectType],
+            ["Budget range", request.budgetRange],
+          ].map(([label, value]) => {
+            const answer = value.trim();
+            return answer && answer.toUpperCase() !== "N/A" ? (
+              <div key={label}><dt className="text-muted-dark">{label}</dt><dd>{answer}</dd></div>
+            ) : null;
+          })}
+        </dl>
+        <a
+          href={`mailto:${encodeURIComponent(request.email).replace("%40", "@")}`}
+          aria-label={`Email ${request.name} at ${request.email}`}
+          className={`${actionClass} mt-4`}
+        >
+          Email submitter
+        </a>
+      </div>
+
+      <div className={cardClass}>
+        <h3 className="font-body font-semibold text-white">Message</h3>
+        <p className="mt-3 whitespace-pre-wrap wrap-anywhere">{request.message}</p>
+      </div>
+
+      <div className={cardClass}>
+        <h3 className="font-body font-semibold text-white">Internal notes</h3>
+        <label htmlFor="request-notes" className="mt-3 mb-1 block text-sm font-semibold">Notes</label>
+        <textarea
+          id="request-notes"
+          rows={5}
+          maxLength={notesLimit}
+          value={draft}
+          aria-describedby="request-notes-limit"
+          onChange={(event) => onDraft(event.target.value)}
+          className={`${inputClass} resize-y`}
+        />
+        <p id="request-notes-limit" className="text-sm text-muted-dark">Up to 5,000 characters.</p>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            className={actionClass}
+            disabled={disabled || draft === request.notes || draft.length > notesLimit}
+            onClick={() => onSave({ notes: draft })}
+          >
+            Save notes
+          </button>
+          <p role="status" className="text-sm text-muted-dark">
+            {notesFeedback === "pending" ? "Saving notes…" : notesFeedback === "saved" ? "Notes saved." : null}
+          </p>
+        </div>
+        {notesFeedback === "error" && <p role="alert" className="mt-2 text-sm text-red-300">Couldn’t confirm the save. Your draft is still here. Refresh to check, then try again.</p>}
+      </div>
+    </section>
   );
 }

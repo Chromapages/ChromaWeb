@@ -2,21 +2,50 @@
 
 ## Current implemented intake contract
 
-`POST /api/intake` is the public Contact page endpoint. The legacy `/api/contact`
-route was removed. Intake accepts the existing request
-schema (`name`, `email`, `requestType`, optional controlled `projectType` and
-`budgetRange`, `company`, `message`, empty `honeypot`). It returns:
+`POST /api/intake` is the public Contact form endpoint. Send JSON with `name`,
+`email`, `requestType` (`prospect`, `client`, or `question`), and `message`.
+`company`, `projectType`, `budgetRange`, and an empty `honeypot` are optional.
+The form constrains project and budget choices. The message must contain at
+least 10 characters after trimming for validation; the original text is stored.
 
-- `200`: `{ success: true, message, issueIdentifier }`, only after the Worker responds
-  with `{ ok: true, issueId, issueIdentifier, issueUrl }` and valid values.
-- `400`: invalid JSON/fields or filled honeypot.
-- `503`: missing/invalid HTTPS Worker configuration.
-- `502`: upstream rejection, malformed/unconfirmed acceptance or network failure.
-- `504`: upstream timeout (10 seconds).
+| HTTP | Response or meaning |
+|---|---|
+| `200` | `{ "success": true, "message": "Request received successfully.", "reference": "REQ-0001" }` |
+| `400` | Invalid JSON/fields or filled honeypot. A field validation response may include `errors` keyed by field name, with arrays of messages. |
+| `502` | Worker rejection, malformed receipt or network failure. |
+| `503` | Missing or invalid server-side Worker configuration. |
+| `504` | Worker timeout (10 seconds). |
 
-No private issue URL or raw upstream diagnostic body is returned. No automatic retry
-is made; an acknowledgement loss can leave an accepted issue at the upstream service.
-See [repair handoff](repair-handoff.md) for actual checks and remaining delivery blockers.
+Success requires Worker `POST /requests` to persist the request in Cloudflare D1
+and return `201 { ok: true, id, reference, createdAt }`. The browser receives only
+the public receipt; `reference` is not an access credential or a promise of
+human review. Upstream diagnostics are not forwarded. A lost acknowledgement can
+leave a stored request; there is no automatic retry.
+
+## Admin requests
+
+Both endpoints require a valid admin session cookie; otherwise they return
+`401`. Responses are not cacheable.
+
+| Endpoint | Input | `200` response |
+|---|---|---|
+| `GET /api/admin/requests` | None | `{ success: true, requests: IntakeRequest[] }`, newest first, up to 50. |
+| `PATCH /api/admin/requests/[id]` | Request UUID and JSON with `status`, `notes`, or both. Notes may be cleared with an empty string and cannot exceed 5,000 characters. | `{ success: true, request: IntakeRequest }`. |
+
+`IntakeRequest` has string fields `id`, `reference`, `status`, `requestType`,
+`name`, `email`, `company`, `projectType`, `budgetRange`, `message`, `notes`,
+`createdAt`, and `updatedAt`. Status is `new`, `active`, `in_review`, or `done`.
+PATCH returns `400` for invalid input or `404` for an unknown UUID. Both routes
+use the same `502`/`503`/`504` Worker error mapping as intake.
+
+## Next.js to Worker
+
+Set server-only `WORKER_URL` to the Worker's HTTPS origin. Next.js sends
+`Authorization: Bearer <WORKER_SECRET>`; the value must match the Worker's
+`INTAKE_SECRET`. Requests go to `/requests` (POST/GET) or `/requests/:id` (PATCH).
+Do not put secrets in URLs or expose them to the browser. See the
+[Worker deployment runbook](../workers/intake-worker/DEPLOY.md) and
+[repair handoff](repair-handoff.md) for preview and release checks.
 
 ## Current CMS revalidation contract
 
@@ -69,11 +98,10 @@ If using Next.js route handlers or API routes, the API base path should be:
 
 ---
 
-## Endpoint Summary
+## Proposed endpoints (not implemented)
 
 | Endpoint | Method | Purpose | Auth |
 |---|---|---|---|
-| `/api/contact` | POST | Submit lead/contact form | Public |
 | `/api/booking-event` | POST | Optional booking completion tracking relay | Public or signed |
 | `/api/preview/enable` | GET or POST | Enable CMS preview mode | Protected |
 | `/api/preview/disable` | GET or POST | Disable CMS preview mode | Protected |
@@ -84,84 +112,10 @@ Not every endpoint must exist on day one. Only build what is needed.
 
 ---
 
-## 1. Contact Form Submission
+## 1. Intake
 
-### Endpoint
-```txt
-POST /api/contact
-```
-
-### Purpose
-Accept a lead form submission from the website and process it for:
-- validation
-- spam prevention
-- email notification or webhook forwarding
-- CRM intake later if needed
-- analytics consistency
-
-### Authentication
-Public endpoint
-
-### Required Protections
-- server-side validation
-- spam protection
-- rate limiting or abuse prevention if traffic warrants it
-- honeypot and/or token-based bot checks
-
-### Request Body Example
-```json
-{
-  "name": "Jane Smith",
-  "email": "jane@example.com",
-  "company": "Acme Services",
-  "website": "https://acmeservices.com",
-  "projectType": "Marketing Website",
-  "budgetRange": "$5k-$10k",
-  "timeline": "Within 30 days",
-  "message": "We need a stronger lead generation site."
-}
-```
-
-### Request Schema
-| Field | Type | Required | Notes |
-|---|---|---:|---|
-| `name` | string | Yes | Full name |
-| `email` | string | Yes | Valid email required |
-| `company` | string | No | Business name |
-| `website` | string | No | Existing website URL |
-| `projectType` | string | Yes | Selected service/project type |
-| `budgetRange` | string | No | Qualification field |
-| `timeline` | string | No | Qualification field |
-| `message` | string | Yes | Freeform project details |
-| `honeypot` | string | No | Must remain empty if used |
-| `source` | string | No | Attribution source if passed |
-
-### Success Response Example
-```json
-{
-  "success": true,
-  "message": "Inquiry received successfully."
-}
-```
-
-### Error Response Example
-```json
-{
-  "success": false,
-  "message": "Invalid form submission.",
-  "errors": {
-    "email": "A valid email is required."
-  }
-}
-```
-
-### Response Codes
-| Code | Meaning |
-|---:|---|
-| `200` | Submission accepted |
-| `400` | Validation failure |
-| `429` | Rate limited |
-| `500` | Internal processing error |
+See the implemented intake and admin contracts above. The removed contact route
+and proposed email/webhook delivery are not part of the current API.
 
 ---
 
@@ -344,10 +298,10 @@ Signed webhook secret required
 ## Auth Methods
 
 ## Public Endpoints
-Used only when the endpoint receives low-risk form or event data.
+Public endpoints can receive private contact data. Validate inputs and do not
+expose that data in public responses, logs, or analytics.
 
 Examples:
-- `/api/contact`
 - `/api/booking-event`
 - `/api/health`
 
@@ -374,19 +328,7 @@ Examples:
 
 ## Shared Validation Rules
 
-### Contact Form Validation
-- `name` must not be empty
-- `email` must be valid
-- `projectType` should match an allowed set if select-based
-- `message` must meet minimum length
-- optional fields should be trimmed and sanitized
-
-### URL Validation
-- if `website` is provided, it must parse as a valid URL or be normalized safely
-
-### Payload Limits
-- reject unusually large payloads
-- keep marketing-site forms lightweight
+Use the implemented intake contract above for request fields and validation.
 
 ---
 
@@ -427,10 +369,5 @@ Keep integration logic isolated in small service utilities rather than embedding
 
 ---
 
-## Final Recommendation
-
-For launch, the only endpoint that is definitely required is:
-
-- `POST /api/contact`
-
-The rest should be added only when the project actually needs them. This is a marketing website, not a SaaS product. Document only the API surface that creates real value.
+Keep the API to the implemented surface above until a product need warrants
+adding one of the historical proposals.
