@@ -12,6 +12,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www\\.chromapages\\.com" }],
+        destination: "https://chromapages.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
   async headers() {
     const projectId = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID;
     const studioHosts = /^[a-z0-9-]+$/.test(projectId ?? "")

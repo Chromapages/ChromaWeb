@@ -223,6 +223,23 @@ test('only Studio routes receive the Sanity content security policy', async () =
   }
 });
 
+test('the canonical host redirect is permanent and preserves the path and query', async () => {
+  const { unstable_getResponseFromNextConfig } = require('next/experimental/testing/server');
+  const nextConfig = loadTs('next.config.ts').default;
+  for (const path of ['/', '/contact?ref=test']) {
+    const response = await unstable_getResponseFromNextConfig({
+      url: `https://www.chromapages.com${path}`, headers: { host: 'www.chromapages.com' }, nextConfig,
+    });
+    assert.equal(response.status, 308);
+    assert.equal(response.headers.get('location'), `https://chromapages.com${path}`);
+  }
+  for (const url of ['https://chromapages.com/', 'http://localhost:3010/', 'https://www-chromapages-com/']) {
+    const response = await unstable_getResponseFromNextConfig({ url, headers: { host: new URL(url).host }, nextConfig });
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('location'), null);
+  }
+});
+
 test('pricing fallback uses existing offers in missing, failed and empty CMS states', async () => {
   const { pricingOffers } = loadTs('lib/site.ts');
   for (const client of [null, { fetch: async () => [] }, { fetch: async () => null }, { fetch: async () => { throw new Error('offline'); } }]) {

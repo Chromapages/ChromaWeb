@@ -1,317 +1,64 @@
-# Deployment
-
-## Purpose
-This document defines the deployment approach for the Chromapages marketing website, including CI/CD workflow, environment variables, hosting setup, and domain/DNS requirements.
-
-The goal is to make deployment repeatable, low-risk, and easy to maintain.
-
----
-
-## 1. Deployment Philosophy
-
-The deployment setup should support:
-- predictable releases
-- easy preview/review workflows
-- low-friction rollback
-- safe handling of secrets
-- clean domain configuration
-- simple production operations for a marketing site
-
-This is not enterprise infrastructure. Keep it reliable and pragmatic.
-
----
-
-## 2. Recommended Hosting
-
-## Primary Recommendation
-**Vercel**
-
-### Why
-Vercel is the best operational fit for a Next.js marketing website because it provides:
-- seamless CI/CD with Git-based deployments
-- preview deployments per branch or pull request
-- easy environment variable management
-- reliable production deployment flow
-- CDN-backed delivery and strong performance defaults
-
-## Alternative
-**Hostinger** or equivalent provider may be used if there is a business reason to consolidate hosting, but Vercel remains the cleaner default for this stack.
-
----
-
-## 3. Recommended CI/CD Flow
-
-## Source Control
-Use **GitHub** as the source of truth for the codebase.
-
-## Branching Model
-Recommended basic branch setup:
-- `main` — production-ready branch
-- `develop` or feature branches — active work branches
-
-### Suggested Workflow
-1. Create feature branch
-2. Build and test changes locally
-3. Push branch to remote repository
-4. Preview deployment is generated automatically
-5. Review content/functionality in preview
-6. Merge into `main`
-7. Production deployment is triggered automatically
-8. Run post-deploy QA checks
-
----
-
-## 4. CI/CD Steps
-
-### Local Development
-```bash
-npm install
-npm run dev
-```
-
-### Build Verification
-```bash
-npm run build
-npm run lint
-```
-
-### Pull Request Flow
-- open PR
-- review code and content
-- validate preview deployment
-- confirm forms, navigation, and metadata on preview
-- merge after approval
-
-### Production Release Flow
-- merge approved changes into `main`
-- Vercel auto-builds and deploys production
-- verify deployment success
-- run post-launch smoke test
-
----
-
-## 5. Suggested Pre-Deployment Checklist
-
-Before merging to production:
-
-- build passes
-- lint passes
-- environment variables are present
-- metadata renders correctly
-- forms submit correctly
-- analytics tags are present
-- internal links work
-- canonical URLs are correct
-- key pages are indexed/noindexed correctly
-- preview content matches expectations
-
----
-
-## 6. Environment Variables
-
-## Core Environment Variables
-Typical values may include:
-
-```env
-NEXT_PUBLIC_SITE_URL=
-NEXT_PUBLIC_GA_ID=
-NEXT_PUBLIC_GTM_ID=
-NEXT_PUBLIC_META_PIXEL_ID=
-BOOKING_URL=
-CMS_PROJECT_ID=
-CMS_DATASET=
-CMS_API_TOKEN=
-CMS_PREVIEW_SECRET=
-REVALIDATE_SECRET=
-FORM_WEBHOOK_URL=
-FORM_NOTIFICATION_EMAIL=
-```
-
-### Public vs Server Variables
-- `NEXT_PUBLIC_*` variables are exposed to the client bundle
-- secrets and tokens must remain server-side only
-
-### Rules
-- never commit secrets to the repository
-- store secrets in the hosting platform’s environment configuration
-- document which environments require which values
-
----
-
-## 7. Environment Definitions
-
-## Local
-Used for development on a local machine.
-
-### Characteristics
-- local `.env.local`
-- local dev server
-- local testing only
-
-## Preview
-Used for review/testing deployments tied to branches or PRs.
-
-### Characteristics
-- preview deployment URLs
-- same stack as production where practical
-- safe for QA and stakeholder review
-
-## Production
-Live customer-facing environment.
-
-### Characteristics
-- main domain attached
-- final environment variables configured
-- analytics and forms point to live services
-
----
-
-## 8. Domain Setup
-
-## Recommended Domain Structure
-- primary domain: `chromapages.com`
-- canonical www decision: choose either `www` or apex and redirect consistently
-
-### Recommendation
-Pick one canonical version:
-- `https://chromapages.com`
-or
-- `https://www.chromapages.com`
-
-Then redirect all alternatives to the canonical host.
-
----
-
-## 9. DNS Setup
-
-## Common Records Needed
-
-### Apex Domain
-Use A record or platform-recommended apex configuration
-
-### WWW Subdomain
-Use CNAME to provider-recommended target
-
-### Example Conceptual Setup
-```txt
-A      @      [hosting provider IP or alias target]
-CNAME  www    [hosting provider cname target]
-```
-
-### Additional Possible Records
-- TXT records for domain verification
-- email-related records if using a domain email provider
-- verification records for analytics/search tooling
-
-### Rule
-Always follow the current hosting provider’s exact DNS instructions rather than hardcoding assumptions.
-
----
-
-## 10. Vercel Setup Notes
-
-## Typical Steps
-1. Connect GitHub repository to Vercel
-2. Select project framework
-3. Configure build settings if needed
-4. Add environment variables
-5. Attach production domain
-6. Configure preview and production behavior
-7. Validate redirects and canonical host behavior
-
-### Default Build Expectations
-- install dependencies
-- run `next build`
-- deploy output automatically
-
----
-
-## 11. CMS Deployment Considerations
-
-If a headless CMS is used:
-
-### Requirements
-- production dataset/project configured
-- preview credentials separated from production public access
-- webhook configured for revalidation if needed
-
-### Recommendation
-Do not couple the site to unpublished content behavior unless preview mode is intentionally configured and tested.
-
----
-
-## 12. Form / Lead Capture Deployment Notes
-
-### Requirements
-- live endpoint configured
-- spam prevention tested in production-like environment
-- success/thank-you flow validated
-- analytics tracking tested on successful submit
-
-### If Using Webhooks
-- verify webhook destination
-- confirm request authentication if used
-- test failure handling gracefully
-
----
-
-## 13. Analytics Deployment Notes
-
-Before going live:
-- verify GA4 is receiving events
-- verify GTM container is published
-- verify conversions are marked correctly
-- verify duplicate events are not firing
-- verify thank-you page or booking completion tracking works as intended
-
----
-
-## 14. Post-Deployment Smoke Test
-
-Immediately after production deployment, verify:
-
-- homepage loads correctly
-- key pages render
-- nav links work
-- contact form works
-- thank-you page works
-- booking link works
-- metadata and social preview tags are present
-- sitemap and robots are accessible if configured
-- analytics events fire correctly
-- canonical URLs are correct
-- no obvious console/runtime errors on key pages
-
----
-
-## 15. Rollback Strategy
-
-### Minimum Rollback Plan
-- use hosting platform rollback/redeploy capability
-- keep last known good deployment available
-- revert broken merges quickly through source control if needed
-
-### Rule
-For a marketing site, fast rollback is more valuable than complex release choreography.
-
----
-
-## 16. Recommended Launch Process
-
-### Launch Sequence
-1. final QA in preview
-2. confirm environment variables
-3. merge to production branch
-4. deploy
-5. validate live domain and redirects
-6. test contact and booking paths
-7. test analytics
-8. monitor early traffic and submissions
-
----
-
-## 17. Final Recommendation
-
-Use a simple GitHub -> Vercel deployment flow with preview deployments, environment-based config, and a short post-release smoke test.
-
-The build should be easy to ship, easy to validate, and easy to recover if a release goes wrong.
+# Deploy ChromaPages on Hostinger hPanel
+
+## Release setup
+
+1. In [hPanel → Websites → Web App](https://www.hostinger.com/support/how-to-deploy-a-nodejs-website-in-hostinger/), import the ChromaWeb Git repository. Select **`marketing-launch`**, not `main`. Importing a repository starts deployment and future pushes to the selected branch may redeploy it. Review the branch and approved commit before proceeding.
+2. Choose **Next.js**, root directory **`.`**, npm, and **Node 24.x** (or Node **22.12+**). `package.json` declares Next.js's minimum of `20.9.0`; the installed Sanity packages need a newer runtime. Use a server deployment with `npm run build` and `npm start`, not a static export. Keep Hostinger's assigned port.
+3. Enter the production settings below in **Environment Variables**, then review the release and deploy. Use an isolated temporary hostname and preview intake credentials for pre-cutover form testing. Do not change the live domain or DNS without separate approval.
+
+## hPanel environment
+
+| Variable | Production setting |
+|---|---|
+| `NEXT_PUBLIC_SITE_URL` | `https://chromapages.com` |
+| `NEXT_PUBLIC_SANITY_PROJECT_ID` | `p2r5601j` |
+| `NEXT_PUBLIC_SANITY_DATASET` | `production` |
+| `NEXT_PUBLIC_GTM_ID` | Optional; leave unset until the real container is approved. |
+| `WORKER_URL` | `https://chromaweb-intake.chromaweb-intake.workers.dev` (HTTPS origin only). |
+| `WORKER_SECRET` | Production Worker Bearer credential from the private hosting handoff. |
+| `SANITY_API_WRITE_TOKEN` | Server-only token for the admin session store in the production dataset. |
+| `ADMIN_PASSWORD` | Approved server-only portal password. |
+| `REVALIDATE_SECRET` | Production secret from the private hosting handoff; required for webhook revalidation. |
+
+Use `.env.worker-production.local` as the private handoff for `WORKER_URL`,
+`WORKER_SECRET`, and `REVALIDATE_SECRET`. Do not upload either env file or commit
+credentials. Local `.env.local` stays pointed at the Preview Worker. Next.js
+loads build-time `NEXT_PUBLIC_*` settings into the client bundle; update them
+in hPanel and rebuild when they change.
+
+## Domain, Sanity and intake
+
+- Serve both `chromapages.com` and `www.chromapages.com` over TLS. Next.js issues
+  a `308` from `www` to the apex and preserves path and query. Hostinger must
+  pass the original Host header for this rule to apply. Follow Hostinger's exact
+  records only when DNS changes are separately approved.
+- In Sanity project `p2r5601j`, allow `https://chromapages.com` with credentials
+  for the embedded Studio at `/admin`. Add a specific temporary HTTPS origin
+  only if Studio must be tested there. Do not use wildcard CORS.
+- Optional Sanity revalidation: `POST /api/revalidate` with a JSON body containing
+  `secret` and `path` or `paths`, per the [API spec](api-spec.md). If an integration
+  sends only a signing header, it is not compatible with this endpoint. Do not
+  put the shared secret in a URL. Without a matching secret the endpoint fails closed.
+- The production intake Worker binds the `chromaweb-intake` D1 database, separate
+  from `chromaweb-intake-preview`. See the [Worker runbook](../workers/intake-worker/DEPLOY.md)
+  for bindings and observability. Verify persisted log/trace access and exports
+  before accepting customer data.
+
+## Smoke and rollback
+
+- On the approved release, check apex `/`, `/contact`, `/services`, `/work`,
+  `/sitemap.xml` and `/robots.txt` return `200`; check HTTPS on both hosts and `308`
+  from `www` with a path and query. Check an unknown route returns `404`.
+- Check `/admin` loads with the intended Sanity project, signed-out `/portal-admin`
+  redirects to login, and signed-out `/api/admin/requests` returns `401`.
+- Use **Preview D1 only** for synthetic submissions and admin updates. Confirm the
+  receipt, unchanged stored text, status/notes after reload, logout revocation and
+  deletion of only the synthetic rows. Production checks are read-only unless
+  separately approved: check Worker `/health` and authenticated listing without
+  printing credentials or request rows.
+- Record the approved Git SHA, Hostinger deployment ID and previous known-good
+  deployment. Restore that build via **Deployments**, or redeploy known-good
+  source if rollback is unavailable. Restore matching hPanel settings and
+  rerun the smoke checks. App rollback does not undo D1 migrations or writes;
+  keep intake paused if the older build is incompatible. Do not roll back DNS,
+  delete data, or restore D1 without separate approval.

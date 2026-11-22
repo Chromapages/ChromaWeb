@@ -1,9 +1,0 @@
-.env*
-._*
-**/._*
-claude-bridge-sandbox/
-workers/
-.omx/
-eslint_output*.txt
-lint_full.txt
-tests/
