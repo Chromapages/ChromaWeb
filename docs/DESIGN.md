@@ -1,91 +1,42 @@
-# Design System Strategy: Elevated Utility (2026 Edition)
+# Precision Chroma v1.1
 
-## 1. Overview & Creative North Star: "The Digital Curator"
-This design system is built on the philosophy of **The Digital Curator**. It moves away from the noisy, cluttered "dashboard" aesthetic of the early 2020s and moves toward a refined, editorial-led experience. It balances the precision of Swiss Grid design with the soul of a high-end fashion or architectural journal.
+Precision Chroma is the visual system for Chromapages' marketing pages. Lead with readable type, a clear next step, and proof the studio has permission to publish. Use the shared tokens in [`app/globals.css`](../app/globals.css); the design-review HTML files are historical studies, not the current specification.
 
-To break the "template" look, we utilize **intentional asymmetry**. Not every column needs to be equal; large-scale typography should overlap with imagery, and white space is treated as a functional element rather than "empty" space. The goal is a UI that feels curated, quiet, and authoritative.
+## Palette and surfaces
 
----
+| Role | Token | Value |
+| --- | --- | --- |
+| Canvas | `bg`, `surface` | `#EFEFED` |
+| Paper | `surface-lowest` | `#FFFFFF` |
+| Process band | `surface-container-low` | `#F5F5F3` |
+| Process questions inset | `surface-container` | `#EAEAE7` |
+| Indigo tint | `indigo-wash` | `#E5E6F0` |
+| Main text and dark anchor | `ink`, `on-surface` | `#0F1115` |
+| Authority and light text links | `primary` | `#2C3892` |
+| Filled action / pressed | `accent`, `accent-pressed` | `#23698C` / `#1F5F80` |
+| Light-surface focus / dark-surface link and focus | `focus`, `accent-bright` | `#6673E8` / `#51B4D9` |
+| Secondary text, light / dark | `muted`, `muted-dark` | `#5F636C` / `#B4B7BD` |
+| Structural dividers, light / dark | `outline`, `outline-dark` | `#D9DADC` / `#353943` |
+| Control boundary | `control` | `var(--color-muted)` |
+| Validation states | `error`, `success` | `#B42318` / `#027A48` |
 
-## 2. Colors & Surface Philosophy
-The palette is rooted in high-contrast neutrals with a single, commanding accent.
+Use solid surfaces, restrained 1px dividers, and 8px control / 12px panel / 16px feature radii. No glass, decorative gradients, or floating-card shadows. Use Ink for the closing inquiry and footer; pair status color with text. Prefer Teal for the primary action and Indigo or bright Teal for underlined secondary links on light or Ink surfaces, respectively.
 
-### Color Tokens (Material 3 Derived)
-- **Primary (The Accent):** `primary` (#111e7c) and `primary_container` (#2c3892). Use sparingly for focus and conversion.
-- **Surface (The Canvas):** `surface` (#f9f9f7) and `surface_container_lowest` (#ffffff).
-- **Ink (The Content):** `on_surface` (#1a1c1b) and `on_background` (#1a1c1b).
+## Typography and layout
 
-### The "No-Line" Rule
-Sectioning must be achieved through **background color shifts**, never through 1px solid borders. 
-- *Application:* A main content area on `surface` should transition into a footer or sidebar using `surface_container_low` (#f4f4f2). This creates a sophisticated "block-printed" feel that is much cleaner than a wireframe-style line.
+- Montserrat variable (400–900) for headings and display; Inter variable (100–900) for body, navigation, and controls. Both Latin fonts are local, use `font-display: swap`, and have system fallbacks.
+- Hero heading: `clamp(2.5rem, 4.25vw, 4rem)` with .98 line height and −.04em tracking. Section heading: `clamp(2rem, 3.4vw, 3rem)` with 1.02 line height. Balance headings; allow natural wraps.
+- Body: 16px / 1.6. Intro: 18–20px / 1.55, up to 68ch. Preserve readable copy rather than shrinking text to fit.
+- Content width max 1280px. Use a 4/8/12-column grid at the base, 640px, and 1024px breakpoints. Gutter/gap: 20/16px, 32/24px, 48/24px, then 80/32px at 1440px. Use shared `cp-section` and `cp-major` spacing.
 
-### Surface Hierarchy & Nesting
-Treat the UI as physical layers of fine paper. 
-- **Level 0 (Background):** `surface` (#f9f9f7).
-- **Level 1 (Main UI Elements):** `surface_container` (#eeeeec).
-- **Level 2 (Active/High Focus):** `surface_container_highest` (#e2e3e1).
-By nesting a "High" container within a "Low" container, you create depth without the visual noise of shadows.
+## Homepage bands
 
-### Glass & Texture
-To achieve the 2026 editorial feel, use **Glassmorphism** for floating navigation and overlays. Use `surface_container_lowest` with 80% opacity and a `20px` backdrop blur. 
-- **Signature Gradient:** For Hero backgrounds or CTAs, use a subtle linear gradient from `primary` (#111e7c) to `primary_container` (#2c3892) at a 135-degree angle to provide a sense of "light" and movement.
+1. **Hero** — text-first, no image. One primary inquiry action; secondary link jumps to Work when approved proof exists, Services otherwise. Keep the five standards in an ordered list and label the service-page anatomy as illustrative, not proof. The desktop Page Stack uses two decorative edge offsets; content remains visible without JavaScript at every width.
+2. **Services** — three featured rows with direct links, not a grid of promotional cards. The service index remains the full catalog.
+3. **Work** — only approved, explicitly classified projects. Omit the band when empty; the dedicated Work page still explains the empty state. Keep project text and its link visible with or without media. Render a responsive image only with valid media and useful alt text.
+4. **Process** — four concrete stages on the low surface, with a stronger inset for key questions. No guarantees about scope, price, or schedule.
+5. **Inquiry** — Ink anchor with a short preparation checklist and “Send an inquiry” to `/contact`. An inquiry does not book a call.
 
----
+## Interaction and verification
 
-## 3. Typography: Editorial Authority
-We utilize **Manrope** for structural displays and **Inter** for high-utility reading. (Note: Montserrat 300/400 is the spiritual guide—ensure your weights remain light and airy).
-
-| Level | Token | Font | Weight | Size | Note |
-| :--- | :--- | :--- | :--- | :--- | :--- |
-| **Display** | `display-lg` | Manrope | 300 | 3.5rem | Use for Hero headlines with -2% letter spacing. |
-| **Headline**| `headline-md`| Manrope | 400 | 1.75rem | Clear, Swiss-style section headers. |
-| **Title** | `title-lg` | Inter | 500 | 1.375rem | For card titles and secondary navigation. |
-| **Body** | `body-lg` | Inter | 300 | 1rem | Main reading text. Leading should be generous (1.6). |
-| **Label** | `label-md` | Inter | 500 | 0.75rem | All-caps, tracked out (+5%) for metadata. |
-
----
-
-## 4. Elevation & Depth
-In this design system, elevation is **felt, not seen.**
-
-- **The Layering Principle:** Avoid the "Floating Card" look. Instead, use "Inset Layering." If a card needs to stand out, place a `surface_container_lowest` (#ffffff) card on a `surface_container` (#eeeeec) background.
-- **Ambient Shadows:** Standard drop shadows are forbidden. If an element must float (e.g., a Modal), use an extra-diffused shadow: `0px 24px 48px rgba(15, 23, 42, 0.06)`. 
-- **The Ghost Border:** If accessibility requires a container boundary, use the `outline_variant` (#c6c5d4) at 15% opacity. It should be nearly invisible, acting as a "suggestion" of a boundary.
-
----
-
-## 5. Components
-
-### Buttons
-- **Primary:** `primary` background with `on_primary` text. No border. `0.25rem` (ROUND_FOUR) corner radius. Use the signature gradient on hover.
-- **Secondary:** `surface_container_high` background. Text is `on_surface`.
-- **Tertiary (Minimal):** Text only in `primary_container`. No background until hover (use 5% opacity of primary).
-
-### Cards
-- **Construction:** Absolutely no borders. Use `surface_container_low` for the card body. 
-- **Spacing:** Use 32px (2rem) internal padding to maintain the "Airy" requirement.
-- **Interaction:** On hover, shift the background to `surface_container_highest` and apply a subtle "Ghost Border."
-
-### Input Fields
-- **Default:** `surface_container_low` background with a bottom-only `outline_variant` at 20% opacity.
-- **Focus:** Transition the bottom border to `primary` (#111e7c) at 2px thickness. 
-- **Editorial Touch:** Labels should use `label-sm` and be positioned 8px above the input, never inside it.
-
-### Progress & Utility
-- **Chips:** `surface_container_high` with `label-md` text. Roundness should be `full` (9999px) for a modern, pill-shaped look.
-- **Lists:** No horizontal dividers. Use 16px of vertical whitespace between items.
-
----
-
-## 6. Do’s and Don’ts
-
-### Do:
-- **Do** use large, high-resolution imagery that bleeds off the edge of the grid.
-- **Do** use `ROUND_FOUR` (0.25rem) for functional elements (buttons, inputs) and `ROUND_EIGHT` (0.5rem) for structural elements (cards).
-- **Do** allow typography to be the "hero." If a page feels empty, increase the font size and line height rather than adding icons or lines.
-
-### Don’t:
-- **Don’t** use 1px solid borders to separate content. It breaks the "Elevated Utility" flow.
-- **Don’t** use pure black (#000000). Always use `on_surface` (#1a1c1b) to maintain a soft, premium feel.
-- **Don’t** use generic icon libraries. Use thin-stroke (1px or 1.5px) icons that match the `light 300` weight of the typography.
-- **Don’t** crowd the screen. If you think there is enough whitespace, add 20% more.
+Keep navigation native, including the mobile disclosure. Aim for 44px or taller controls, keep a visible keyboard focus ring, and let the skip link focus the main landmark without adding an extra Tab stop. Make all content and core links usable before hydration. Respect reduced motion; no reveal state should be required to read or engage. Check narrow mobile through wide desktop, text/background contrast, keyboard order, and both populated and empty Work. Never substitute testimonials, client logos, or results for approved proof.

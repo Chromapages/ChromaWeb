@@ -9,6 +9,7 @@ const marketingPaths: Record<string, true> = {
   "/privacy-policy": true,
   "/process": true,
   "/services": true,
+  "/sitemap.xml": true,
   "/work": true,
 };
 const detailPath = /^\/(?:services|work)\/[a-z0-9]+(?:-[a-z0-9]+)*$/;

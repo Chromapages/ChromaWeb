@@ -2,7 +2,7 @@ import Script from "next/script";
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import SkipLink from "@/components/global/skip-link";
-import { site } from "@/lib/site";
+import { services, site, siteOrigin, siteSocialMetadata } from "@/lib/site";
 import "./globals.css";
 
 const montserrat = localFont({
@@ -19,54 +19,54 @@ const inter = localFont({
   display: "swap",
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://chromapages.com";
 const configuredGtmId = process.env.NEXT_PUBLIC_GTM_ID?.trim();
 const gtmId = configuredGtmId && /^GTM-[A-Z0-9]+$/.test(configuredGtmId) && !/^GTM-X+$/.test(configuredGtmId)
   ? configuredGtmId
   : null;
 
-// Structured data limited to facts already visible on the site: the business
-// name, public URL, and the configured brand description.
-// No address, phone, ratings, reviews, or logo are asserted here.
+const organizationId = `${siteOrigin}/#organization`;
+
+// Describe only verified services; no prices, reviews, or physical address.
 const structuredData = [
   {
     "@context": "https://schema.org",
     "@type": "Organization",
+    "@id": organizationId,
     name: site.name,
-    url: siteUrl,
+    url: siteOrigin,
     description: site.description,
+    hasOfferCatalog: {
+      "@type": "OfferCatalog",
+      name: "Website services",
+      itemListElement: services.map(({ label, summary, slug }) => ({
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "Service",
+          name: label,
+          description: summary,
+          url: `${siteOrigin}/services/${slug}`,
+        },
+      })),
+    },
   },
   {
     "@context": "https://schema.org",
     "@type": "WebSite",
+    "@id": `${siteOrigin}/#website`,
     name: site.name,
-    url: siteUrl,
+    url: siteOrigin,
+    publisher: { "@id": organizationId },
   },
 ];
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(siteOrigin),
   title: {
     default: "Chromapages",
     template: "%s | Chromapages",
   },
-  description:
-    "Chromapages designs and builds websites for service businesses ready for an online presence that reflects the quality of their work.",
-  openGraph: {
-    type: "website",
-    siteName: "Chromapages",
-    title: "Chromapages",
-    description:
-      "Chromapages designs and builds websites for service businesses ready for an online presence that reflects the quality of their work.",
-    images: [{ url: "/og-image.png", width: 1200, height: 630 }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Chromapages",
-    description:
-      "Chromapages designs and builds websites for service businesses ready for an online presence that reflects the quality of their work.",
-    images: ["/og-image.png"],
-  },
+  description: site.description,
+  ...siteSocialMetadata,
 };
 
 export default function RootLayout({
@@ -96,7 +96,7 @@ export default function RootLayout({
         />}
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }}
         />
       </head>
       <body className="min-h-full bg-surface text-on-surface font-body">

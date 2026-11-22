@@ -452,15 +452,19 @@ test('Home renders the standards in order and keeps core content visible without
     '@/lib/sanity/fetch': { getCaseStudies: async () => [] },
   }).default;
   const html = renderToStaticMarkup(await Home());
-  const standards = html.match(/aria-labelledby="standards-title"[^>]*>.*?<ol\b[^>]*>(.*?)<\/ol>/s);
+  const standards = html.match(/aria-labelledby="standards-title"[^>]*>.*?<ol\b[^>]*\brole="list"[^>]*>(.*?)<\/ol>/s);
   assert.ok(standards, 'standards must render as an ordered list');
   assert.deepEqual(
-    [...standards[1].matchAll(/<li\b[^>]*>.*?<span[^>]*>([^<>]+)<\/span><\/li>/gs)].map((item) => item[1]),
+    [...standards[1].matchAll(/<span\b[^>]*\bdata-standard-title="true"[^>]*>([^<>]+)<\/span>/g)].map((item) => item[1]),
     ['Look Premium', 'Convert Clearly', 'Load Fast', 'Launch Clean', 'Keep Improving'],
   );
   assert.match(html, /<h1[^>]*>A website that reflects/);
   assert.match(html, /href="\/contact"[^>]*>Send an inquiry/);
-  assert.match(html, /Case studies are not available here right now/);
+  assert.match(html, /<a\b[^>]*href="#services"[^>]*>Explore services<\/a>/);
+  for (const slug of ['marketing-websites', 'landing-pages', 'ongoing-support']) {
+    assert.match(html, new RegExp(`<a\\b[^>]*href="/services/${slug}"`));
+  }
+  assert.doesNotMatch(html, /Case studies are not available|id="work-title"|href="(?:#work|\/work\/[^"]*)"/);
   assert.doesNotMatch(html, /Trusted by industry leaders|Partner logos?|<img\b|(?:["\s])opacity-0(?=["\s])|style="[^"]*opacity:\s*0(?:;|")/i);
 });
 
@@ -474,20 +478,85 @@ test('Home keeps approved proof text when its image has no usable alt', async ()
     '@/lib/sanity/image': { urlFor: () => assert.fail('unused media should not be resolved') },
   }).default;
   const html = renderToStaticMarkup(await Home());
-  assert.match(html, /href="\/work\/verified"/);
+  assert.match(html, /id="work-title"/);
+  assert.match(html, /href="#work"[^>]*>View work<\/a>/);
+  assert.match(html, /href="\/work"[^>]*>View all work<\/a>/);
+  assert.match(html, /href="\/work\/verified"[^>]*>View project/);
+  assert.match(html, /Client project/);
   assert.match(html, /Verified narrative/);
   assert.doesNotMatch(html, /<img\b/);
+});
+
+test('site origin normalizes HTTP(S) URLs without accepting credentials, queries or fragments', () => {
+  process.env.NEXT_PUBLIC_SITE_URL = '  https://EXAMPLE.com:443/deploy/  ';
+  const { resolveSiteOrigin, siteOrigin, site } = loadTs('lib/site.ts');
+  assert.equal(siteOrigin, 'https://example.com');
+  assert.equal(site.url, siteOrigin);
+  assert.equal(resolveSiteOrigin('https://example.com/'), 'https://example.com');
+  assert.equal(resolveSiteOrigin('http://localhost:3010/'), 'http://localhost:3010');
+  for (const invalid of [undefined, '', '  ', 'example.com', '//example.com', 'ftp://example.com',
+    'https://user@example.com', 'https://:pass@example.com', 'https://example.com/?a=1',
+    'https://example.com/?', 'https://example.com/#anchor', 'https://example.com/#']) {
+    assert.equal(resolveSiteOrigin(invalid), 'https://chromapages.com');
+  }
+});
+
+const rootLayoutMocks = {
+  './globals.css': {},
+  'next/font/local': ({ variable }) => ({ variable }),
+  'next/script': (props) => React.createElement('script', props),
+  '@/components/global/skip-link': () => null,
+};
+
+test('homepage social cards and structured data share an origin and describe real services', () => {
+  process.env.NEXT_PUBLIC_SITE_URL = ' https://example.com/subfolder/ ';
+  const siteModule = loadTs('lib/site.ts');
+  const marker = '</script><script>example</script>';
+  const services = siteModule.services.map((service, index) => index ? service : { ...service, summary: marker });
+  const { default: Layout, metadata } = loadTs('app/layout.tsx', {
+    ...rootLayoutMocks, '@/lib/site': { ...siteModule, services },
+  });
+  const home = loadTs('app/(marketing)/page.tsx', {
+    '@/lib/sanity/fetch': {}, '@/lib/sanity/image': {},
+  }).metadata;
+  const origin = 'https://example.com';
+  assert.equal(metadata.metadataBase.origin, origin);
+  for (const { openGraph, twitter } of [metadata, home]) {
+    assert.equal(openGraph.url, '/');
+    assert.equal(openGraph.title, 'Websites for service businesses | Chromapages');
+    assert.deepEqual(openGraph.images, [{
+      url: '/og-image.png', width: 1200, height: 630, alt: 'Chromapages — Websites for service businesses',
+    }]);
+    assert.equal(twitter.title, openGraph.title);
+    assert.equal(twitter.card, 'summary_large_image');
+    assert.equal(twitter.images[0].url, '/og-image.png');
+  }
+
+  const html = renderToStaticMarkup(React.createElement(Layout, null, 'content'));
+  const raw = html.match(/<script type="application\/ld\+json">(.*?)<\/script>/s)[1];
+  assert.doesNotMatch(raw, /<|ProfessionalService|aggregateRating|"price"|"address"/);
+  const [organization, website] = JSON.parse(raw);
+  assert.equal(organization['@type'], 'Organization');
+  assert.equal(organization['@id'], `${origin}/#organization`);
+  assert.equal(organization.url, origin);
+  assert.equal(website['@type'], 'WebSite');
+  assert.equal(website['@id'], `${origin}/#website`);
+  assert.equal(website.url, origin);
+  assert.equal(website.publisher['@id'], organization['@id']);
+  assert.deepEqual(organization.hasOfferCatalog, {
+    '@type': 'OfferCatalog',
+    name: 'Website services',
+    itemListElement: services.map(({ label, summary, slug }) => ({
+      '@type': 'Offer',
+      itemOffered: { '@type': 'Service', name: label, description: summary, url: `${origin}/services/${slug}` },
+    })),
+  });
 });
 
 test('GTM is absent for missing, placeholder and malformed IDs', () => {
   for (const id of ['', 'GTM-XXXXXXX', 'GTM-ABC<script>', 'GTM-ABC1234']) {
     process.env.NEXT_PUBLIC_GTM_ID = id;
-    const Layout = loadTs('app/layout.tsx', {
-      './globals.css': {},
-      'next/font/local': ({ variable }) => ({ variable }),
-      'next/script': (props) => React.createElement('script', props),
-      '@/components/global/skip-link': () => null,
-    }).default;
+    const Layout = loadTs('app/layout.tsx', rootLayoutMocks).default;
     const html = renderToStaticMarkup(React.createElement(Layout, null, 'content'));
     assert.equal(html.includes('googletagmanager.com'), id === 'GTM-ABC1234');
   }

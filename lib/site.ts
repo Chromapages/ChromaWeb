@@ -43,6 +43,23 @@ export type FaqItem = {
   answer: string;
 };
 
+export function resolveSiteOrigin(raw?: string): string {
+  if (raw?.trim()) {
+    try {
+      const url = new URL(raw.trim());
+      if ((url.protocol === "http:" || url.protocol === "https:") &&
+        !url.username && !url.password && !/[?#]/.test(url.href)) {
+        return url.origin;
+      }
+    } catch {
+      // Use the canonical public origin for invalid configuration.
+    }
+  }
+  return "https://chromapages.com";
+}
+
+export const siteOrigin = resolveSiteOrigin(process.env.NEXT_PUBLIC_SITE_URL);
+
 export const site = {
   name: "Chromapages",
   tagline: "Digital Design Elevated.",
@@ -51,7 +68,32 @@ export const site = {
   email: "hello@chromapages.com",
   bookingLabel: "Send an inquiry",
   bookingHref: "/contact",
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://chromapages.com",
+  url: siteOrigin,
+};
+
+const socialTitle = "Websites for service businesses | Chromapages";
+const socialImage = {
+  url: "/og-image.png",
+  width: 1200,
+  height: 630,
+  alt: "Chromapages — Websites for service businesses",
+};
+
+export const siteSocialMetadata = {
+  openGraph: {
+    type: "website" as const,
+    siteName: site.name,
+    title: socialTitle,
+    description: site.description,
+    url: "/",
+    images: [socialImage],
+  },
+  twitter: {
+    card: "summary_large_image" as const,
+    title: socialTitle,
+    description: site.description,
+    images: [{ url: socialImage.url, alt: socialImage.alt }],
+  },
 };
 
 export const navigation: NavItem[] = [

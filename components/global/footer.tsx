@@ -19,7 +19,7 @@ export default function Footer() {
         </Link>
         <nav aria-label="Footer" className="flex flex-wrap gap-x-6">
           {footerLinks.map(({ href, label }) => (
-            <Link key={href} href={href} className="cp-text-link text-sm">
+            <Link key={href} href={href} prefetch={href === "/contact" ? false : undefined} className="cp-text-link text-sm">
               {label}
             </Link>
           ))}

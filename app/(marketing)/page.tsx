@@ -6,13 +6,14 @@ import ProcessSteps from "@/components/sections/process-steps";
 import CtaBlock from "@/components/sections/cta-block";
 import { getCaseStudies } from "@/lib/sanity/fetch";
 import { urlFor } from "@/lib/sanity/image";
+import { site, siteSocialMetadata } from "@/lib/site";
 import type { CaseStudy } from "@/types/sanity";
 
 export const metadata: Metadata = {
   title: "Websites for service businesses",
-  description:
-    "Chromapages designs and builds websites for service businesses ready for an online presence that reflects the quality of their work.",
+  description: site.description,
   alternates: { canonical: "/" },
+  ...siteSocialMetadata,
 };
 
 function projectImage({ mainImage }: CaseStudy) {
@@ -44,11 +45,11 @@ export default async function HomePage() {
   }));
   return (
     <>
-      <Hero isHome />
+      <Hero isHome hasApprovedWork={projects.length > 0} />
+      <ServicesGrid isHome />
       <FeaturedWork projects={projects} />
-      <ServicesGrid />
       <ProcessSteps />
-      <CtaBlock />
+      <CtaBlock showPrepChecklist />
     </>
   );
 }

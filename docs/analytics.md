@@ -44,11 +44,18 @@ Keeping these distinct prevents three common reporting errors: counting a CTA cl
 | `form_submit` | `event`, `name="form_submit"`, `location="request-form"`, `pagePath`, `pageType="request"` | Only after a validated intake receipt. No PII or receipt reference. |
 | `faq_expand` | `event`, `name="faq_expand"`, `location="faq"`, `label=<question>` | FAQ item toggled (fires on **open and close**; no `pagePath`/`pageType`). Currently only on `/pricing`. |
 
-Observed `location` values in use: `header`, `hero`, `homepage-bottom`, `pricing-snapshot`, `project-card`, `service-card` (dead component), `not-found`, `contact-page`.
+### 0.5 Homepage CTA coverage
 
-### 0.5 Observed CTA coverage gaps
+| Placement | `click_cta` coverage |
+|---|---|
+| Header | “Send an inquiry” is tracked separately from the desktop header (`header`) and mobile disclosure (`mobile-menu`). |
+| Hero | Primary inquiry and secondary Work or Services link (`hero`). |
+| Services | “Explore service: …” for each featured service and “View all services” (rendered as “View all 5 services”), all at `homepage-services`. |
+| Work | “View all work” and each “View project” (`homepage-work`), only when approved work is shown. |
+| Process | “View the process” (`homepage-process`). |
+| Closing inquiry | “Send an inquiry” (`homepage-bottom`). |
 
-These interactive elements currently emit **no** event because they lack an `analyticsLabel`: homepage service cards ("Discuss project"), `FeaturedWork` buttons ("View all case studies", "View Case Study →"), the mobile-menu CTA, and the service-detail sidebar "Book A Call". Decide whether each should be tracked; do not silently add labels because that changes the contract.
+Routine navigation links and the footer are not tracked as CTAs. This records application event coverage, not receipt by GTM or GA4.
 
 ### 0.6 Documented but not implemented
 

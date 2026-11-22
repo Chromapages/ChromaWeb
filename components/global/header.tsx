@@ -59,6 +59,7 @@ export default function Header({ items = staticNavigation }: HeaderProps) {
 
         <Button
           href={site.bookingHref}
+          prefetch={false}
           analyticsLabel={site.bookingLabel}
           analyticsLocation="header"
           aria-current={pathname === site.bookingHref ? "page" : undefined}
@@ -67,14 +68,24 @@ export default function Header({ items = staticNavigation }: HeaderProps) {
           {site.bookingLabel}
         </Button>
 
-        <details ref={menu} className="ms-auto open:basis-full lg:hidden">
+        <details
+          ref={menu}
+          className="ms-auto open:basis-full lg:hidden"
+          onKeyDown={(event) => {
+            if (event.key === "Escape" && event.currentTarget.open) {
+              event.preventDefault();
+              closeMenu();
+            }
+          }}
+        >
           <summary className="ms-auto min-h-11 w-fit cursor-pointer rounded-functional border border-control px-4 py-2 text-sm font-semibold">
             Menu
           </summary>
-          <nav aria-label="Primary" className="flex flex-col gap-2 pt-4">
+          <nav aria-label="Primary" className="flex flex-col gap-1 pt-2">
             {navigationLinks(true)}
             <Button
               href={site.bookingHref}
+              prefetch={false}
               analyticsLabel={site.bookingLabel}
               analyticsLocation="mobile-menu"
               aria-current={pathname === site.bookingHref ? "page" : undefined}

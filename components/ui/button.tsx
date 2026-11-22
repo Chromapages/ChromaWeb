@@ -16,6 +16,7 @@ type SharedProps = {
 
 type LinkButtonProps = SharedProps & {
   href: string;
+  prefetch?: boolean;
   target?: string;
   rel?: string;
 } & Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "children" | "className">;
@@ -23,11 +24,12 @@ type LinkButtonProps = SharedProps & {
 type NativeButtonProps = SharedProps &
   Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children" | "className"> & {
     href?: never;
+    prefetch?: never;
   };
 
 function buttonClasses(variant: NonNullable<SharedProps["variant"]>) {
   const base =
-    "inline-flex min-h-12 items-center justify-center gap-2 rounded-functional border border-transparent px-5 py-3 text-center text-sm font-semibold leading-tight transition-colors duration-160 motion-reduce:transition-none disabled:cursor-not-allowed aria-disabled:cursor-not-allowed";
+    "inline-flex min-h-12 items-center justify-center gap-2 rounded-functional border border-transparent px-5 py-3 text-center text-sm font-semibold leading-tight transition-[color,background-color,border-color] duration-160 motion-reduce:transition-none disabled:cursor-not-allowed aria-disabled:cursor-not-allowed";
 
   switch (variant) {
     case "secondary":
@@ -44,7 +46,7 @@ function buttonClasses(variant: NonNullable<SharedProps["variant"]>) {
     default:
       return cn(
         base,
-        "bg-accent text-white hover:bg-accent-pressed active:bg-accent-pressed disabled:bg-outline disabled:text-ink aria-disabled:bg-outline aria-disabled:text-ink",
+        "border-[color:var(--cp-button-edge,transparent)] bg-accent text-white hover:bg-accent-pressed active:bg-accent-pressed disabled:bg-outline disabled:text-ink aria-disabled:bg-outline aria-disabled:text-ink",
       );
   }
 }
@@ -57,6 +59,7 @@ export default function Button(props: LinkButtonProps | NativeButtonProps) {
     analyticsLocation,
     className,
     children,
+    prefetch,
     onClick,
     ...rest
   } = props;
@@ -107,7 +110,7 @@ export default function Button(props: LinkButtonProps | NativeButtonProps) {
     }
 
     return (
-      <Link {...anchorProps} href={href} onClick={handleClick} className={classes}>
+      <Link {...anchorProps} href={href} prefetch={prefetch} onClick={handleClick} className={classes}>
         {children}
       </Link>
     );

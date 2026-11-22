@@ -47,6 +47,7 @@ test('revalidation rejects invalid batches before invalidating any path', async 
     { path: '/portal-admin' },
     { path: '/work/[slug]' },
     { path: '/services/site?preview=true' },
+    { paths: ['/sitemap.xml', '/sitemap.xml?preview=true'] },
     { paths: '/work' },
     { paths: ['/work', '/work/another/nested'] },
     { paths: ['/work', null] },
@@ -59,7 +60,7 @@ test('revalidation rejects invalid batches before invalidating any path', async 
 
 test('revalidation accepts an authenticated batch of marketing routes and literal slugs', async (t) => {
   const { post, revalidated } = route(t);
-  const paths = ['/', '/pricing', '/services/site-refresh', '/work/client-2026'];
+  const paths = ['/', '/pricing', '/services/site-refresh', '/work/client-2026', '/sitemap.xml'];
   const response = await post({ secret, path: paths[0], paths: paths.slice(1) });
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { success: true, revalidated: paths });

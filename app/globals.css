@@ -7,9 +7,7 @@
   --color-surface-lowest: #FFFFFF;
   --color-surface-container-low: #F5F5F3;
   --color-surface-container: #EAEAE7;
-  --color-surface-container-high: #E2E2DF;
   --color-primary: #2C3892;
-  --color-primary-container: #2C3892;
   --color-accent: #23698C;
   --color-accent-pressed: #1F5F80;
   --color-accent-bright: #51B4D9;
@@ -24,8 +22,7 @@
   --color-outline-dark: #353943;
   --color-error: #B42318;
   --color-success: #027A48;
-  --color-surface-2: #E5E6F0;
-  --color-surface-3: #DBDBEE;
+  --color-indigo-wash: #E5E6F0;
 
   --text-hero: clamp(2.5rem, 4.25vw, 4rem);
   --text-section: clamp(2rem, 3.4vw, 3rem);
@@ -119,8 +116,16 @@
     --cp-focus: var(--color-accent-bright);
     --cp-link: var(--color-accent-bright);
     --cp-muted: var(--color-muted-dark);
+    --cp-button-edge: color-mix(in srgb, var(--color-accent-bright) 60%, var(--color-ink));
     background: var(--color-ink);
     color: var(--color-bg);
+  }
+
+  .cp-page-stack {
+    padding: 1.25rem;
+    border: 1px solid var(--color-outline);
+    border-radius: var(--radius-structural);
+    background: var(--color-surface-lowest);
   }
 
   @media (min-width: 40rem) {
@@ -144,10 +149,7 @@
     .cp-page-stack {
       position: relative;
       margin: 12px 12px 0 0;
-      padding: 32px;
-      border: 1px solid var(--color-outline);
-      border-radius: var(--radius-structural);
-      background: var(--color-surface-lowest);
+      padding: 2rem;
     }
 
     .cp-page-stack::before,
